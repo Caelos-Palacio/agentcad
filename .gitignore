@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+# salidas de agentcad (nunca se versionan: telemetría, copias de trabajo, cobertura generada)
+registro/
+trabajo/
+cobertura.json
+*.lock
+.coverage
+# binarios y secretos
+*.AppImage
+.env
+*.key
+*.pem
+
+# solo para el mantenedor (no se publican)
+SNAPSHOT_ORIGEN.txt
+PUBLICACION.md

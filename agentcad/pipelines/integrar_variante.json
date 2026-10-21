@@ -1,0 +1,31 @@
+{
+ "esquema": "agentcad.pipeline/1",
+ "nombre": "integrar_variante",
+ "descripcion": "Integra una variante: aplica los parámetros elegidos por pieza, reconstruye y pasa las puertas por pieza (pared, interferencia, imprimibilidad, margen FEM). La pieza que incumple se revierte (flag a 0) y se reintenta con el resto; luego puerta de masa e informe.",
+ "parametros": {
+  "etiqueta": {"type": "string", "descripcion": "etiqueta de la variante nueva, p. ej. v2"},
+  "etiqueta_anterior": {"type": "string", "descripcion": "etiqueta de la variante anterior (nombre del respaldo)"},
+  "config": {"type": "string", "descripcion": "JSON de parámetros elegidos por pieza (ver ejemplos/soporte_simple/config_variante.json)"},
+  "base_g": {"type": "number", "descripcion": "masa estimada del conjunto en la variante anterior (g)"},
+  "tolerancia_masa_g": {"type": "number", "default": 0.0},
+  "pared_min_mm": {"type": "number", "default": 1.2},
+  "max_rollbacks": {"type": "integer", "default": 3}
+ },
+ "pasos": [
+  {"id": "respaldo", "bloque": "backup", "entradas": {"etiqueta": "$etiqueta_anterior"}},
+  {"id": "aplicar", "bloque": "aplicar_params", "entradas": {"config": "$config"}, "despues": ["respaldo"]},
+  {"id": "construir", "bloque": "build", "en_fallo": "reintentar"},
+  {"id": "puertas_pieza", "para_cada": "$aplicar.piezas_activas", "como": "p", "pasos": [
+    {"id": "pared", "bloque": "puerta_pared_min", "entradas": {"pieza": "$p", "umbral_mm": "$pared_min_mm"},
+     "en_fallo": {"accion": "rollback", "paso": "aplicar", "entradas": {"pieza": "$p"}, "repetir_desde": "construir", "max": 3}},
+    {"id": "interf", "bloque": "puerta_interferencia", "entradas": {"pieza": "$p"},
+     "en_fallo": {"accion": "rollback", "paso": "aplicar", "entradas": {"pieza": "$p"}, "repetir_desde": "construir", "max": 3}},
+    {"id": "imprim", "bloque": "puerta_imprimibilidad", "entradas": {"pieza": "$p"},
+     "en_fallo": {"accion": "rollback", "paso": "aplicar", "entradas": {"pieza": "$p"}, "repetir_desde": "construir", "max": 3}},
+    {"id": "fem", "bloque": "puerta_margen_fem", "entradas": {"config": "$config", "pieza": "$p"},
+     "en_fallo": {"accion": "rollback", "paso": "aplicar", "entradas": {"pieza": "$p"}, "repetir_desde": "construir", "max": 3}}
+  ]},
+  {"id": "masa", "bloque": "puerta_masa", "entradas": {"base_g": "$base_g", "tolerancia_g": "$tolerancia_masa_g"}},
+  {"id": "informe", "bloque": "informe", "entradas": {"etiqueta": "$etiqueta", "diario": "$_diario"}}
+ ]
+}

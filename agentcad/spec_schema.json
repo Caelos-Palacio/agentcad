@@ -1,0 +1,265 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "agentcad/spec_schema.json",
+ "title": "Especificación declarativa de una pieza impresa (agentcad)",
+ "version": "1",
+ "description": "Versión del esquema = 1; cada spec declara 'esquema': 'agentcad.spec/1' y su propia revisión en 'version'. Las comprobaciones semánticas (ids únicos, métricas conocidas, unidad coherente, zonas completas, orientación frente a PRINT) las hace spec.check_spec_file. Ver SDD.md.",
+ "type": "object",
+ "required": [
+  "esquema",
+  "pieza",
+  "version",
+  "prioridades",
+  "orientacion_impresion",
+  "zonas_obligatorias",
+  "cargas",
+  "requisitos"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "esquema": {
+   "const": "agentcad.spec/1"
+  },
+  "pieza": {
+   "type": "string",
+   "minLength": 1,
+   "description": "nombre de la pieza = nombre del fichero specs/<pieza>.json"
+  },
+  "version": {
+   "type": "integer",
+   "minimum": 1,
+   "description": "revisión de esta especificación"
+  },
+  "descripcion": {
+   "type": "string"
+  },
+  "prioridades": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "string",
+    "minLength": 1
+   },
+   "description": "clases de prioridad, de mayor a menor"
+  },
+  "orientacion_impresion": {
+   "$ref": "#/$defs/orientacion"
+  },
+  "zonas_obligatorias": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/zona"
+   }
+  },
+  "cargas": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/carga"
+   }
+  },
+  "requisitos": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "$ref": "#/$defs/requisito"
+   }
+  }
+ },
+ "$defs": {
+  "orientacion": {
+   "type": "object",
+   "required": [
+    "rot_deg"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "rot_deg": {
+     "type": "array",
+     "minItems": 3,
+     "maxItems": 3,
+     "items": {
+      "type": "number"
+     },
+     "description": "rotación sobre la cama [rx,ry,rz] en grados (convención de OpenSCAD: Rz*Ry*Rx)"
+    },
+    "soporte": {
+     "type": "string"
+    },
+    "fuente": {
+     "type": "string"
+    }
+   }
+  },
+  "zona": {
+   "type": "object",
+   "required": [
+    "id",
+    "tipo"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "type": "string",
+     "minLength": 1
+    },
+    "tipo": {
+     "enum": [
+      "agujeros_conservados",
+      "caja_material",
+      "caja_hueco"
+     ]
+    },
+    "referencia": {
+     "type": "string"
+    },
+    "tolerancia_mm": {
+     "type": "number",
+     "minimum": 0
+    },
+    "caja_mm": {
+     "type": "array",
+     "minItems": 2,
+     "maxItems": 2,
+     "items": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     }
+    },
+    "fraccion_min": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "fraccion_max": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "motivo": {
+     "type": "string"
+    }
+   }
+  },
+  "carga": {
+   "type": "object",
+   "required": [
+    "id",
+    "valor",
+    "unidad",
+    "fuente",
+    "supuesto"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "type": "string",
+     "minLength": 1
+    },
+    "descripcion": {
+     "type": "string"
+    },
+    "valor": {
+     "type": "number"
+    },
+    "unidad": {
+     "enum": [
+      "mm",
+      "mm3",
+      "g",
+      "adimensional",
+      "fraccion",
+      "grados",
+      "N",
+      "N*mm",
+      "MPa",
+      "kgf*cm"
+     ]
+    },
+    "direccion": {
+     "type": "string"
+    },
+    "fuente": {
+     "type": "string",
+     "minLength": 1,
+     "description": "fichero/documento/agente de donde sale la carga"
+    },
+    "supuesto": {
+     "type": "boolean",
+     "description": "true si es una hipótesis de ingeniería no medida ni derivada de un modelo del proyecto"
+    }
+   }
+  },
+  "requisito": {
+   "type": "object",
+   "required": [
+    "id",
+    "metrica",
+    "op",
+    "valor",
+    "unidad"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "type": "string",
+     "minLength": 1
+    },
+    "metrica": {
+     "type": "string",
+     "description": "ruta sección.campo, p. ej. estructura.margen_min"
+    },
+    "op": {
+     "enum": [
+      ">=",
+      "<="
+     ]
+    },
+    "valor": {
+     "type": "number",
+     "description": "umbral"
+    },
+    "unidad": {
+     "enum": [
+      "mm",
+      "mm3",
+      "g",
+      "adimensional",
+      "fraccion",
+      "grados",
+      "N",
+      "N*mm",
+      "MPa",
+      "kgf*cm"
+     ]
+    },
+    "prioridad": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "clase_prioridad": {
+     "type": "string"
+    },
+    "tolerancia": {
+     "type": "number",
+     "minimum": 0,
+     "description": "tolerancia de medida declarada; se suma al margen"
+    },
+    "supuesto": {
+     "type": "boolean"
+    },
+    "incumplimiento_conocido": {
+     "type": "string",
+     "minLength": 1,
+     "description": "si el requisito está incumplido HOY por un hallazgo documentado: la prueba derivada se marca como fallo esperado"
+    },
+    "motivo": {
+     "type": "string"
+    }
+   }
+  }
+ }
+}

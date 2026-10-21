@@ -1,0 +1,107 @@
+{
+ "esquema": "agentcad.spec/1",
+ "pieza": "placa_soporte",
+ "version": 1,
+ "descripcion": "Placa soporte de 3 mm con 4 taladros M3, 4 pilares y ventanas hexagonales (pieza del ejemplo).",
+ "prioridades": [
+  "seguridad_estructural",
+  "fabricabilidad",
+  "ensamble",
+  "masa"
+ ],
+ "orientacion_impresion": {
+  "rot_deg": [
+   0,
+   0,
+   0
+  ],
+  "soporte": "no",
+  "fuente": "agentcad.toml [impresion.placa_soporte]"
+ },
+ "zonas_obligatorias": [
+  {
+   "id": "agujeros_conservados",
+   "tipo": "agujeros_conservados",
+   "referencia": "linea_base:placa_soporte",
+   "tolerancia_mm": 0.1,
+   "motivo": "los taladros de la línea base no se pueden tapar ni desplazar"
+  }
+ ],
+ "cargas": [
+  {
+   "id": "apoyo",
+   "descripcion": "carga repartida sobre los pilares",
+   "valor": 33.0,
+   "unidad": "N",
+   "fuente": "agentcad.toml [estructura.placa_soporte].carga_N",
+   "supuesto": true,
+   "direccion": "-z"
+  }
+ ],
+ "requisitos": [
+  {
+   "id": "margen_min",
+   "metrica": "estructura.margen_min",
+   "op": ">=",
+   "valor": 2.0,
+   "prioridad": 1,
+   "motivo": "margen mínimo exigido sobre el admisible del modelo de carga declarado (supuestos de ejemplo)",
+   "unidad": "adimensional"
+  },
+  {
+   "id": "pared_min_mm",
+   "metrica": "fabricabilidad.pared_min_mm",
+   "op": ">=",
+   "valor": 1.2,
+   "prioridad": 1,
+   "motivo": "3 perímetros de 0,4 mm; tolerancia = un píxel del plano de medida (0,06 mm)",
+   "tolerancia": 0.06,
+   "unidad": "mm"
+  },
+  {
+   "id": "voladizo_frac",
+   "metrica": "fabricabilidad.voladizo.fraccion_area",
+   "op": "<=",
+   "valor": 0.02,
+   "prioridad": 2,
+   "motivo": "voladizos > 45 grados en la orientación de impresión",
+   "unidad": "fraccion"
+  },
+  {
+   "id": "islas",
+   "metrica": "fabricabilidad.islas.numero",
+   "op": "<=",
+   "valor": 0,
+   "prioridad": 1,
+   "motivo": "sin islas en el corte por capas",
+   "unidad": "adimensional"
+  },
+  {
+   "id": "puente_mm",
+   "metrica": "fabricabilidad.puente.luz_estimada_mm",
+   "op": "<=",
+   "valor": 10.0,
+   "prioridad": 2,
+   "motivo": "luz máxima de puente sin soporte (PETG)",
+   "unidad": "mm"
+  },
+  {
+   "id": "interferencia_mm3",
+   "metrica": "interferencia.volumen_total_mm3",
+   "op": "<=",
+   "valor": 0.1,
+   "prioridad": 1,
+   "motivo": "umbral de [interferencia].umbral_mm3",
+   "unidad": "mm3"
+  },
+  {
+   "id": "masa_g",
+   "metrica": "describe.masa_estimada_g",
+   "op": "<=",
+   "valor": 8.0,
+   "prioridad": 3,
+   "motivo": "objetivo de masa estimada: menos que la línea base sin ventanas",
+   "unidad": "g"
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "parts": [
+  {
+   "id": "placa",
+   "file": "stl/placa_soporte.stl",
+   "matrix": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "group": "fijo",
+   "category": "impresa",
+   "printable": true
+  },
+  {
+   "id": "vecino",
+   "file": "stl/bloque_vecino.stl",
+   "matrix": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "group": "movil",
+   "category": "comprada",
+   "printable": false
+  }
+ ],
+ "joints": [
+  {
+   "id": "giro",
+   "pivot": [
+    72.0,
+    20,
+    0
+   ],
+   "axis": [
+    0,
+    0,
+    1
+   ],
+   "groups": [
+    "movil"
+   ]
+  }
+ ]
+}

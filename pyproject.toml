@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentcad"
+version = "0.1.0"
+description = "Herramientas deterministas y componibles para que agentes de IA analicen, prueben y optimicen diseños 3D (OpenSCAD/STL) frente a especificaciones. Digital nunca se etiqueta como físico."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Caelos-Palacio" }]
+requires-python = ">=3.12"
+keywords = ["cad", "openscad", "stl", "3d-printing", "mcp", "agents", "verification", "fem"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Natural Language :: Spanish",
+  "Topic :: Scientific/Engineering",
+]
+# Versiones mínimas = las probadas (venv de desarrollo: Python 3.14.4). Python >= 3.12 por sys.monitoring (cobertura) y tomllib.
+dependencies = [
+  "numpy>=2.4",
+  "scipy>=1.18",
+  "trimesh>=4.7",
+  "manifold3d>=3.5",
+  "python-fcl>=0.7.0.11",
+  "matplotlib>=3.10",
+  "pillow>=12.3",
+]
+
+[project.urls]
+Repository = "https://github.com/Caelos-Palacio/agentcad"
+
+[project.scripts]
+agentcad = "agentcad.__main__:main"
+agentcad-mcp = "agentcad.server:main"
+
+[tool.setuptools.packages.find]
+include = ["agentcad*"]
+
+[tool.setuptools.package-data]
+agentcad = ["*.json", "pipelines/*.json"]

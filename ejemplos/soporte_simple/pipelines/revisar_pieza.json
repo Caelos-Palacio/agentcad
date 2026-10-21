@@ -1,0 +1,16 @@
+{
+ "esquema": "agentcad.pipeline/1",
+ "nombre": "revisar_pieza",
+ "descripcion": "Reconstruye el ejemplo y pasa las puertas digitales (pared mínima, interferencia, imprimibilidad) a una pieza; escribe el informe.",
+ "parametros": {
+  "pieza": {"type": "string", "descripcion": "pieza de rutas.stl, p. ej. placa_soporte"},
+  "pared_min_mm": {"type": "number", "default": 1.2}
+ },
+ "pasos": [
+  {"id": "construir", "bloque": "build", "en_fallo": "reintentar"},
+  {"id": "pared", "bloque": "puerta_pared_min", "entradas": {"pieza": "$pieza", "umbral_mm": "$pared_min_mm"}},
+  {"id": "interf", "bloque": "puerta_interferencia", "entradas": {"pieza": "$pieza"}},
+  {"id": "imprim", "bloque": "puerta_imprimibilidad", "entradas": {"pieza": "$pieza"}},
+  {"id": "informe", "bloque": "informe", "entradas": {"etiqueta": "revision", "diario": "$_diario"}}
+ ]
+}

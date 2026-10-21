@@ -1,0 +1,14 @@
+{
+ "revision": "demo-1",
+ "parts": {
+  "placa_soporte": {
+   "nondesignable_add": [
+    {"id": "pilares", "type": "cylinder", "kind": "pilar", "reason": "apoyo de la electrónica: no se puede quitar material"}
+   ],
+   "void_add": [],
+   "keep_free_tool_volumes": [
+    {"id": "acceso_llave", "type": "box", "kind": "herramienta", "reason": "holgura para la llave de los tornillos M3"}
+   ]
+  }
+ }
+}

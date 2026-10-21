@@ -1,0 +1,25 @@
+{
+ "$id": "agentcad.bloque/1",
+ "type": "object",
+ "required": ["nombre", "descripcion", "entradas", "salidas", "precondiciones", "efectos", "pesado", "deshacible", "honestidad"],
+ "additionalProperties": false,
+ "properties": {
+  "nombre": {"type": "string", "minLength": 3, "maxLength": 40},
+  "descripcion": {"type": "string", "minLength": 10, "maxLength": 200},
+  "entradas": {"type": "object", "additionalProperties": {"$ref": "#/$defs/campo"}},
+  "salidas": {"type": "object", "additionalProperties": {"$ref": "#/$defs/campo"}},
+  "precondiciones": {"type": "array", "items": {"type": "string"}},
+  "efectos": {"type": "array", "items": {"type": "string"}},
+  "pesado": {"type": "boolean"},
+  "deshacible": {"type": "boolean"},
+  "honestidad": {"type": "string", "minLength": 10},
+  "estado": {"type": "string", "enum": ["estable", "borrador"]},
+  "ejemplo": {"type": "object"}
+ },
+ "$defs": {
+  "campo": {
+   "type": "object", "required": ["type"],
+   "properties": {"type": {"enum": ["string", "number", "integer", "boolean", "object", "array", "any"]}, "descripcion": {"type": "string"}}
+  }
+ }
+}

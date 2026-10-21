@@ -1,0 +1,5 @@
+{
+ "piezas": {
+  "placa_soporte": {"flag": "ventanas", "params": {"espesor": 3}, "fem": {"base": 2.4, "cand": 2.6, "malla_mm": 1.0, "criterio": 2.0}}
+ }
+}

@@ -1,0 +1,68 @@
+# Proyecto de ejemplo de agentcad: una placa soporte con ventanas hexagonales y un bloque vecino.
+# Todas las rutas son relativas a este archivo. Ejecuta los comandos desde este directorio (o exporta AGENTCAD_PROYECTO).
+[proyecto]
+nombre = "soporte_simple"
+
+[rutas]
+stl = ["stl"]                  # `part = "placa_soporte"` se busca en estas carpetas
+ensamblaje = "assembly.json"   # piezas, matrices y articulaciones (para interferencia y vecinas)
+specs = "specs"                # spec-as-code por pieza
+registro = "registro"          # registro JSONL encadenado por hash (no se versiona)
+trabajo = "trabajo"            # copias de trabajo de las modificaciones (no se versiona)
+params = "params.scad"         # parámetros OpenSCAD que edita el bloque aplicar_params
+zonas = "zonas.json"           # zonas protegidas de describe_part (opcional)
+estado_build = "build/status.json"
+
+[bases]
+linea_base = "stl_base"        # `part = "linea_base:placa_soporte"`: la pieza antes de aligerar
+
+[build]
+comando = ["python", "generar_stl.py"]   # lo ejecuta el bloque `build` con cwd en la raíz
+timeout_s = 300
+
+[material]                     # PETG, boquilla 0,4 mm
+densidad_g_mm3 = 1.27e-3
+ancho_linea_mm = 0.45
+
+[impresion.defecto]
+walls = 3
+infill = 15
+
+[impresion.placa_soporte]      # perfil de impresión de la pieza (rot = orientación sobre la cama)
+walls = 3
+infill = 15
+rot = [0, 0, 0]
+support = "no"
+layer = 0.2
+
+[impresion.pieza_vertical]     # solo para demostrar el aviso de orientación en las specs
+rot = [-90, 0, 0]
+
+[poses.girado]                 # poses discretas: articulaciones de assembly.json en grados
+giro = 45
+
+[interferencia]
+umbral_mm3 = 0.1
+excluir_categorias = []
+excluir_grupos = []
+exentos = []                   # pares que encajan por diseño: [["patron_a", "patron_b"]]
+
+[respaldo]
+archivos = ["generar_stl.py", "soporte.scad"]
+directorios = []
+
+# Modelo de carga declarado: placa apoyada en los 4 taladros (r 4,5 mm), 33 N repartidos sobre los pilares. SUPUESTOS de ejemplo, no medidos.
+[estructura.placa_soporte]
+modelo = "placa_apoyada"
+apoyos = [[5, 5], [55, 5], [5, 35], [55, 35]]
+radio_apoyo_mm = 4.5
+carga_N = 33.0
+espesor_mm = 3.0
+E_MPa = 1900.0
+nu = 0.38
+admisible_MPa = 10.0
+recomendado_mm = 0.8
+casos = ["carga"]
+
+[impresion.pieza_soporte_demo]   # solo para las pruebas: pieza con soportes declarados
+support = "mínimo, solo bajo el puente"

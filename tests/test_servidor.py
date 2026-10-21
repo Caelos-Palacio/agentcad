@@ -2,7 +2,7 @@
 import json, os, subprocess, sys, tempfile, unittest
 from pathlib import Path
 from tests import fixtures as fx
-PROY = Path(__file__).resolve().parents[2]
+PROY = Path(__file__).resolve().parents[1]
 from tests._marcas import pesada
 
 @pesada

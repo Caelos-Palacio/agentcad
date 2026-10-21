@@ -8,7 +8,7 @@ def ejecutar(herramienta, args, timeout_s=300, mem_mb=3000, lock=None, espera_lo
     lock = lock or config.lock(); os.makedirs(os.path.dirname(lock), exist_ok=True)
     cmd = [sys.executable, '-m', 'agentcad.worker']
     if os.environ.get('AGENTCAD_LOCK_HELD') != '1': cmd = ['flock', '-w', str(espera_lock_s), '-E', '99', lock] + cmd
-    env = dict(os.environ, AGENTCAD_MEM_MB=str(mem_mb), AGENTCAD_TIMEOUT_S=str(timeout_s), OMP_NUM_THREADS='4', OPENBLAS_NUM_THREADS='4', AGENTCAD_FASTLU='1')
+    env = dict(config.entorno_hijo(), AGENTCAD_MEM_MB=str(mem_mb), AGENTCAD_TIMEOUT_S=str(timeout_s), OMP_NUM_THREADS='4', OPENBLAS_NUM_THREADS='4', AGENTCAD_FASTLU='1')
     p = subprocess.Popen(cmd, cwd=config.proyecto().raiz, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
     try: out, err = p.communicate(json.dumps(dict(tool=herramienta, args=args)), timeout=espera_lock_s + timeout_s + 10)
     except subprocess.TimeoutExpired:

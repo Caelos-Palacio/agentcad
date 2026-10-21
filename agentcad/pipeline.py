@@ -331,6 +331,6 @@ def lanzar_fondo(ruta, params, corrida, simulado=True, raiz=None):
     """Lanza el pipeline desacoplado (nueva sesión, SIGHUP ignorado = setsid+nohup) para sobrevivir a cortes del agente; se consulta con `estado` y se reanuda con `reanudar`."""
     raiz = Path(raiz or config.raiz_proyecto()); cmd = [sys.executable, '-m', 'agentcad', 'correr', str(ruta), '--params', json.dumps(params), '--corrida', str(corrida), '--raiz', str(raiz), '--simulado' if simulado else '--real']
     log = raiz / 'build' / 'pipelines' / f'{corrida}.out'; log.parent.mkdir(parents=True, exist_ok=True)
-    p = subprocess.Popen(cmd, stdout=open(log, 'w'), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True, cwd=str(raiz),
+    p = subprocess.Popen(cmd, stdout=open(log, 'w'), stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True, env=config.entorno_hijo(), cwd=str(raiz),
                          preexec_fn=lambda: signal.signal(signal.SIGHUP, signal.SIG_IGN))
     return p.pid

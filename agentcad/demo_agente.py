@@ -9,7 +9,7 @@ from . import config
 class Cliente:
     """Cliente MCP mínimo: lanza el servidor por stdio y habla JSON-RPC."""
     def __init__(self, env):
-        self.p = subprocess.Popen([sys.executable, '-m', 'agentcad.server'], cwd=str(config.raiz_proyecto()), stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=env)
+        self.p = subprocess.Popen([sys.executable, '-m', 'agentcad.server'], cwd=str(config.raiz_proyecto()), env=config.entorno_hijo(env), stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=env)
         self.n = 0
         self.rpc('initialize', dict(protocolVersion='2025-06-18', capabilities={}, clientInfo=dict(name='demo_agente', version='1')))
         self.p.stdin.write(json.dumps(dict(jsonrpc='2.0', method='notifications/initialized')) + '\n'); self.p.stdin.flush()

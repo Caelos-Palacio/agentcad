@@ -95,3 +95,9 @@ def zonas_revision():
     z = proyecto().zonas
     try: return __import__('json').loads(z.read_text()).get('revision') if z else None
     except Exception: return None
+
+def entorno_hijo(base=None):
+    """Entorno para procesos hijos (worker, pipelines en segundo plano): garantiza que `agentcad` sea importable aunque no esté instalado con pip."""
+    env = dict(os.environ if base is None else base); aqui = str(ROOT.parent)
+    env['PYTHONPATH'] = aqui + (os.pathsep + env['PYTHONPATH'] if env.get('PYTHONPATH') else '')
+    return env

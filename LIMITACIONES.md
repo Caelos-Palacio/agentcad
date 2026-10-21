@@ -1,6 +1,6 @@
 # Limitaciones conocidas (léelas antes de fiarte de un número)
 
-Esta es la lista honesta, a fecha de la versión 0.2.0. Nada de lo que produce agentcad es un resultado físico.
+Esta es la lista honesta, a fecha de la versión 0.3.0. Nada de lo que produce agentcad es un resultado físico.
 
 ## Qué es y qué no es un resultado
 
@@ -28,6 +28,16 @@ Matices que quedan de esas correcciones:
 6. **Poses discretas** en `check_interference`: sin volumen barrido ni tolerancias de montaje; envolventes de hardware nominales.
 7. **`apply_hex_lightening` solo aligera placas planas** con la cara inferior en z=0; no hay aligerado de piezas cilíndricas ni de formas libres.
 8. **Marcas de rendimiento.** El FEM voxel no está pensado para piezas grandes a paso fino (en el proyecto de origen un eslabón a 1 mm necesitó del orden de 3 GB); `evaluate_structure` rechaza más de ~750.000 elementos estimados.
+
+## Laminado y calibración (0.3.0)
+
+- **`check_gcode` es un análisis de gcode, no de la impresión.** Rasteriza a 0,2 mm; tolerancias de apoyo (0,6 mm, soportes 1,5 mm) y umbrales (voladizo 1,5 mm, puente 5 mm de distancia al apoyo = 10 mm de luz) son convenciones heredadas del proyecto de origen. En ese caso dio un falso positivo de isla
+  (1,6 mm2) que solo se descartó contrastando con la STL. Probado con gcode sintético y con 12 gcodes de Orca/Anycubic; Prusa/Cura-like solo con pruebas sintéticas. Los gcodes de varios cientos de MB tardan minutos y varios GB de memoria.
+- **`check_printability` frente al laminador** (16 piezas, un caso; `validacion/laminador/INFORME.md`): acierta las islas y los puentes largos grandes (luz 43 a 76 mm: ±3 % de la del rebanado), pero (1) sin conocer los soportes avisa de lo que el laminador cubre (islas de diseño: «FP» frente al gcode);
+  (2) el umbral de voladizo del 2 % del **área total** no ve voladizos locales en piezas grandes (`yaw_housing`, `palm`: FN) y frente al gcode con soportes avisa de voladizos que el soporte resolvió (`proximal_phalanx`, `tendon_pulley`: FP frente a B); (3) un puente de 13,2 mm se estimó en 9,3 mm (-29 %, bajo el umbral de 10);
+  (4) con voxel grueso (`turret_c`, 0,41 mm, `resuelve_umbral: false`) cuenta 2 islas frente a 1; (5) la isla de `palm` es de umbral (`isla_min_mm2` 0,5 frente a 1,0 del analizador); (6) no localiza islas ni puentes (solo cuenta y luz), así que no se puede cotejar evento a evento. Ninguno se ha corregido: con 16 piezas ajustar umbrales sería ajustar a los datos de prueba.
+- **La calibración de masa y tiempo es indicativa.** Salen de 4 placas (12 combinaciones que repiten esas 4 geometrías), una familia de piezas, PETG y un perfil de laminado. Error de validación cruzada dejando fuera una placa: filamento 7 a 8 % medio (máx. 11 %), tiempo 8 a 9 % (máx. 18 %). Más parámetros empeoran el resultado.
+  El estimador de masa del CAD sobrestima (468 g frente a 393 a 405 g del laminador con soportes). `estimar_impresion` marca `fiable: false` con menos de 8 grupos y exige que declares tu calibración.
 
 ## Ejecutor, bloques y pipelines
 

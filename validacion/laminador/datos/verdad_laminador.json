@@ -1,0 +1,434 @@
+{
+ "upper_arm": {
+  "placa": 1,
+  "soporte_en_perfil": "arbol",
+  "A": {
+   "islas": 2,
+   "puentes_largos": 6,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": 75.2
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 1,
+    "voladizos_fuertes": 1
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 1,
+    "voladizos_fuertes": 1
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 1,
+    "voladizos_fuertes": 1
+   }
+  }
+ },
+ "forearm": {
+  "placa": 1,
+  "soporte_en_perfil": "arbol",
+  "A": {
+   "islas": 2,
+   "puentes_largos": 6,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": 75.2
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 1,
+    "voladizos_fuertes": 1
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 1,
+    "voladizos_fuertes": 1
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 1,
+    "voladizos_fuertes": 1
+   }
+  }
+ },
+ "electronics_tray": {
+  "placa": 1,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 1
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 1
+   }
+  }
+ },
+ "power_tray": {
+  "placa": 1,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "imu_strap_mount": {
+  "placa": 1,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "axle_cap": {
+  "placa": 1,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "base_flange": {
+  "placa": 2,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "tendon_pulley": {
+  "placa": 2,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 1,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "proximal_phalanx": {
+  "placa": 2,
+  "soporte_en_perfil": "minimo",
+  "A": {
+   "islas": 1,
+   "puentes_largos": 2,
+   "voladizos_fuertes": 2,
+   "luz_max_mm": 48.8
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 3
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "joint_bushing": {
+  "placa": 2,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "turret_c": {
+  "placa": 3,
+  "soporte_en_perfil": "arbol",
+  "A": {
+   "islas": 1,
+   "puentes_largos": 7,
+   "voladizos_fuertes": 11,
+   "luz_max_mm": 42.0
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 5,
+    "voladizos_fuertes": 8
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 5,
+    "voladizos_fuertes": 8
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 5,
+    "voladizos_fuertes": 8
+   }
+  }
+ },
+ "yaw_housing": {
+  "placa": 3,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 8,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 4
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 4
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 4
+   }
+  }
+ },
+ "palm": {
+  "placa": 3,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 2,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 2
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 2
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 2
+   }
+  }
+ },
+ "wrist_output": {
+  "placa": 3,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "distal_phalanx": {
+  "placa": 3,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 1,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": 13.2
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 3,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 3,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 3,
+    "voladizos_fuertes": 0
+   }
+  }
+ },
+ "wearable_tray": {
+  "placa": 4,
+  "soporte_en_perfil": null,
+  "A": {
+   "islas": 0,
+   "puentes_largos": 0,
+   "voladizos_fuertes": 0,
+   "luz_max_mm": null
+  },
+  "B": {
+   "kobra_x": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_3": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   },
+   "kobra_2_neo": {
+    "islas": 0,
+    "puentes_largos": 0,
+    "voladizos_fuertes": 0
+   }
+  }
+ }
+}

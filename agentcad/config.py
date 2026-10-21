@@ -10,7 +10,7 @@ AGENTCAD_RAICES_EXTRA (rutas adicionales permitidas para `part`, separadas por o
 import copy, os, sys, tomllib
 from pathlib import Path
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 ROOT = Path(__file__).resolve().parent          # directorio del paquete (esquemas JSON)
 
 DEFECTOS = dict(
@@ -26,6 +26,7 @@ DEFECTOS = dict(
     interferencia=dict(excluir_categorias=[], excluir_grupos=[], exentos=[], umbral_mm3=0.1),
     respaldo=dict(archivos=[], directorios=[]),
     gcode=dict(perfil='', celda_mm=0.2, perfiles={}),   # check_gcode: perfiles de máquina (cama_x_mm, cama_y_mm, z_max_mm, límites); ver README
+    calibracion=dict(perfil='', perfiles={}),             # estimar_impresion: razón y error declarados (agentcad.calibracion)
     estructura={},                                    # pieza -> modelo de carga (ver structure.py)
 )
 

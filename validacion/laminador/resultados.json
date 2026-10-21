@@ -1,0 +1,592 @@
+{
+ "comparacion": {
+  "categorias": {
+   "islas": {
+    "A": {
+     "tp": 4,
+     "fp": 1,
+     "fn": 0,
+     "tn": 11,
+     "precision": 0.8,
+     "sensibilidad": 1.0,
+     "clases": {
+      "axle_cap": "TN",
+      "base_flange": "TN",
+      "distal_phalanx": "TN",
+      "electronics_tray": "TN",
+      "forearm": "TP",
+      "imu_strap_mount": "TN",
+      "joint_bushing": "TN",
+      "palm": "FP",
+      "power_tray": "TN",
+      "proximal_phalanx": "TP",
+      "tendon_pulley": "TN",
+      "turret_c": "TP",
+      "upper_arm": "TP",
+      "wearable_tray": "TN",
+      "wrist_output": "TN",
+      "yaw_housing": "TN"
+     }
+    },
+    "B": {
+     "tp": 0,
+     "fp": 5,
+     "fn": 0,
+     "tn": 11,
+     "precision": 0.0,
+     "sensibilidad": null,
+     "clases": {
+      "axle_cap": "TN",
+      "base_flange": "TN",
+      "distal_phalanx": "TN",
+      "electronics_tray": "TN",
+      "forearm": "FP",
+      "imu_strap_mount": "TN",
+      "joint_bushing": "TN",
+      "palm": "FP",
+      "power_tray": "TN",
+      "proximal_phalanx": "FP",
+      "tendon_pulley": "TN",
+      "turret_c": "FP",
+      "upper_arm": "FP",
+      "wearable_tray": "TN",
+      "wrist_output": "TN",
+      "yaw_housing": "TN"
+     }
+    },
+    "predicho": {
+     "axle_cap": false,
+     "base_flange": false,
+     "distal_phalanx": false,
+     "electronics_tray": false,
+     "forearm": true,
+     "imu_strap_mount": false,
+     "joint_bushing": false,
+     "palm": true,
+     "power_tray": false,
+     "proximal_phalanx": true,
+     "tendon_pulley": false,
+     "turret_c": true,
+     "upper_arm": true,
+     "wearable_tray": false,
+     "wrist_output": false,
+     "yaw_housing": false
+    }
+   },
+   "puentes_largos": {
+    "A": {
+     "tp": 4,
+     "fp": 0,
+     "fn": 1,
+     "tn": 11,
+     "precision": 1.0,
+     "sensibilidad": 0.8,
+     "clases": {
+      "axle_cap": "TN",
+      "base_flange": "TN",
+      "distal_phalanx": "FN",
+      "electronics_tray": "TN",
+      "forearm": "TP",
+      "imu_strap_mount": "TN",
+      "joint_bushing": "TN",
+      "palm": "TN",
+      "power_tray": "TN",
+      "proximal_phalanx": "TP",
+      "tendon_pulley": "TN",
+      "turret_c": "TP",
+      "upper_arm": "TP",
+      "wearable_tray": "TN",
+      "wrist_output": "TN",
+      "yaw_housing": "TN"
+     }
+    },
+    "B": {
+     "tp": 3,
+     "fp": 1,
+     "fn": 1,
+     "tn": 11,
+     "precision": 0.75,
+     "sensibilidad": 0.75,
+     "clases": {
+      "axle_cap": "TN",
+      "base_flange": "TN",
+      "distal_phalanx": "FN",
+      "electronics_tray": "TN",
+      "forearm": "TP",
+      "imu_strap_mount": "TN",
+      "joint_bushing": "TN",
+      "palm": "TN",
+      "power_tray": "TN",
+      "proximal_phalanx": "FP",
+      "tendon_pulley": "TN",
+      "turret_c": "TP",
+      "upper_arm": "TP",
+      "wearable_tray": "TN",
+      "wrist_output": "TN",
+      "yaw_housing": "TN"
+     }
+    },
+    "predicho": {
+     "axle_cap": false,
+     "base_flange": false,
+     "distal_phalanx": false,
+     "electronics_tray": false,
+     "forearm": true,
+     "imu_strap_mount": false,
+     "joint_bushing": false,
+     "palm": false,
+     "power_tray": false,
+     "proximal_phalanx": true,
+     "tendon_pulley": false,
+     "turret_c": true,
+     "upper_arm": true,
+     "wearable_tray": false,
+     "wrist_output": false,
+     "yaw_housing": false
+    }
+   },
+   "voladizos": {
+    "A": {
+     "tp": 6,
+     "fp": 0,
+     "fn": 2,
+     "tn": 8,
+     "precision": 1.0,
+     "sensibilidad": 0.75,
+     "clases": {
+      "axle_cap": "TN",
+      "base_flange": "TN",
+      "distal_phalanx": "TP",
+      "electronics_tray": "TN",
+      "forearm": "TP",
+      "imu_strap_mount": "TN",
+      "joint_bushing": "TN",
+      "palm": "FN",
+      "power_tray": "TN",
+      "proximal_phalanx": "TP",
+      "tendon_pulley": "TP",
+      "turret_c": "TP",
+      "upper_arm": "TP",
+      "wearable_tray": "TN",
+      "wrist_output": "TN",
+      "yaw_housing": "FN"
+     }
+    },
+    "B": {
+     "tp": 4,
+     "fp": 2,
+     "fn": 3,
+     "tn": 7,
+     "precision": 0.6666666666666666,
+     "sensibilidad": 0.5714285714285714,
+     "clases": {
+      "axle_cap": "TN",
+      "base_flange": "TN",
+      "distal_phalanx": "TP",
+      "electronics_tray": "FN",
+      "forearm": "TP",
+      "imu_strap_mount": "TN",
+      "joint_bushing": "TN",
+      "palm": "FN",
+      "power_tray": "TN",
+      "proximal_phalanx": "FP",
+      "tendon_pulley": "FP",
+      "turret_c": "TP",
+      "upper_arm": "TP",
+      "wearable_tray": "TN",
+      "wrist_output": "TN",
+      "yaw_housing": "FN"
+     }
+    },
+    "predicho": {
+     "axle_cap": false,
+     "base_flange": false,
+     "distal_phalanx": true,
+     "electronics_tray": false,
+     "forearm": true,
+     "imu_strap_mount": false,
+     "joint_bushing": false,
+     "palm": false,
+     "power_tray": false,
+     "proximal_phalanx": true,
+     "tendon_pulley": true,
+     "turret_c": true,
+     "upper_arm": true,
+     "wearable_tray": false,
+     "wrist_output": false,
+     "yaw_housing": false
+    }
+   }
+  },
+  "barrido_voladizo": {
+   "0.02": {
+    "A": {
+     "tp": 6,
+     "fp": 0,
+     "fn": 2,
+     "tn": 8
+    },
+    "B": {
+     "tp": 4,
+     "fp": 2,
+     "fn": 3,
+     "tn": 7
+    }
+   },
+   "0.01": {
+    "A": {
+     "tp": 6,
+     "fp": 1,
+     "fn": 2,
+     "tn": 7
+    },
+    "B": {
+     "tp": 4,
+     "fp": 3,
+     "fn": 3,
+     "tn": 6
+    }
+   },
+   "0.005": {
+    "A": {
+     "tp": 8,
+     "fp": 2,
+     "fn": 0,
+     "tn": 6
+    },
+    "B": {
+     "tp": 6,
+     "fp": 4,
+     "fn": 1,
+     "tn": 5
+    }
+   },
+   "0.002": {
+    "A": {
+     "tp": 8,
+     "fp": 3,
+     "fn": 0,
+     "tn": 5
+    },
+    "B": {
+     "tp": 7,
+     "fp": 4,
+     "fn": 0,
+     "tn": 5
+    }
+   },
+   "0.001": {
+    "A": {
+     "tp": 8,
+     "fp": 4,
+     "fn": 0,
+     "tn": 4
+    },
+    "B": {
+     "tp": 7,
+     "fp": 5,
+     "fn": 0,
+     "tn": 4
+    }
+   }
+  },
+  "islas_conteo": [
+   {
+    "pieza": "forearm",
+    "agentcad": 2,
+    "rebanado": 2,
+    "gcode_reales": 0
+   },
+   {
+    "pieza": "palm",
+    "agentcad": 1,
+    "rebanado": 0,
+    "gcode_reales": 0
+   },
+   {
+    "pieza": "proximal_phalanx",
+    "agentcad": 1,
+    "rebanado": 1,
+    "gcode_reales": 0
+   },
+   {
+    "pieza": "turret_c",
+    "agentcad": 2,
+    "rebanado": 1,
+    "gcode_reales": 0
+   },
+   {
+    "pieza": "upper_arm",
+    "agentcad": 2,
+    "rebanado": 2,
+    "gcode_reales": 0
+   }
+  ],
+  "luz_puente": [
+   {
+    "pieza": "distal_phalanx",
+    "agentcad_mm": 9.3199,
+    "rebanado_mm": 13.2,
+    "error_rel": -0.2939469696969696
+   },
+   {
+    "pieza": "forearm",
+    "agentcad_mm": 76.2732,
+    "rebanado_mm": 75.2,
+    "error_rel": 0.014271276595744679
+   },
+   {
+    "pieza": "proximal_phalanx",
+    "agentcad_mm": 49.44,
+    "rebanado_mm": 48.8,
+    "error_rel": 0.013114754098360668
+   },
+   {
+    "pieza": "turret_c",
+    "agentcad_mm": 43.0872,
+    "rebanado_mm": 42.0,
+    "error_rel": 0.025885714285714352
+   },
+   {
+    "pieza": "upper_arm",
+    "agentcad_mm": 76.2967,
+    "rebanado_mm": 75.2,
+    "error_rel": 0.01458377659574466
+   }
+  ]
+ },
+ "masa_tiempo": {
+  "modelos_alternativos": {
+   "r x masa_cad (1 parámetro)": {
+    "mape": 0.07812462272865628,
+    "max_abs": 0.12261582582801568
+   },
+   "a x volumen + b x área (2)": {
+    "mape": 0.18436456595153916,
+    "max_abs": 0.36486966013502914
+   },
+   "r x masa_cad + c x capas con soporte (2)": {
+    "mape": 0.24282902475522672,
+    "max_abs": 0.7301538378993153
+   },
+   "a x volumen + b x área + c x capas con soporte (3)": {
+    "mape": 1.0422041514215856,
+    "max_abs": 3.3405475547825896
+   }
+  },
+  "masa_cad_por_placa_g": {
+   "1": 131.75,
+   "2": 72.81,
+   "3": 229.57,
+   "4": 34.09
+  },
+  "piezas_por_placa": {
+   "1": 9,
+   "2": 8,
+   "3": 7,
+   "4": 1
+  },
+  "masa_cad_total_g": 468.2,
+  "por_impresora": {
+   "kobra_x": {
+    "filamento_g": 393.0,
+    "tiempo_s": 71509.0,
+    "tiempo_h": 19.86,
+    "desvio_frente_cad": -0.1605,
+    "desvio_frente_449_8": -0.1262,
+    "desvio_frente_464": -0.1529,
+    "filas": [
+     {
+      "placa": 1,
+      "cad": 131.75,
+      "g": 116.66,
+      "t": 22851.0
+     },
+     {
+      "placa": 2,
+      "cad": 72.81,
+      "g": 55.81,
+      "t": 10094.0
+     },
+     {
+      "placa": 3,
+      "cad": 229.57,
+      "g": 194.49,
+      "t": 33777.0
+     },
+     {
+      "placa": 4,
+      "cad": 34.09,
+      "g": 26.08,
+      "t": 4787.0
+     }
+    ],
+    "filamento": {
+     "razon": 0.8095,
+     "cv": {
+      "errores_rel": [
+       -0.10850512207012175,
+       0.07796245154316389,
+       -0.05765147099701617,
+       0.08092559924251798
+      ],
+      "mape": 0.08126116096320495,
+      "max_abs": 0.10850512207012175,
+      "n_grupos": 4
+     },
+     "fiable": false,
+     "nota": "solo 4 grupos (< 8): el error de validación cruzada es una indicación, no una garantía"
+    },
+    "tiempo": {
+     "s_por_g_cad": 147.64,
+     "cv": {
+      "errores_rel": [
+       -0.18198173200575582,
+       0.09090503452528344,
+       0.004612353292765281,
+       0.07120825089336905
+      ],
+      "mape": 0.0871768426792934,
+      "max_abs": 0.18198173200575582,
+      "n_grupos": 4
+     },
+     "fiable": false,
+     "nota": "solo 4 grupos (< 8): el error de validación cruzada es una indicación, no una garantía"
+    }
+   },
+   "kobra_3": {
+    "filamento_g": 393.8,
+    "tiempo_s": 64541.0,
+    "tiempo_h": 17.93,
+    "desvio_frente_cad": -0.1589,
+    "desvio_frente_449_8": -0.1245,
+    "desvio_frente_464": -0.1513,
+    "filas": [
+     {
+      "placa": 1,
+      "cad": 131.75,
+      "g": 116.88,
+      "t": 20443.0
+     },
+     {
+      "placa": 2,
+      "cad": 72.81,
+      "g": 55.98,
+      "t": 9211.0
+     },
+     {
+      "placa": 3,
+      "cad": 229.57,
+      "g": 195.0,
+      "t": 30359.0
+     },
+     {
+      "placa": 4,
+      "cad": 34.09,
+      "g": 25.95,
+      "t": 4528.0
+     }
+    ],
+    "filamento": {
+     "razon": 0.8098,
+     "cv": {
+      "errores_rel": [
+       -0.1102194913330061,
+       0.07383786949270722,
+       -0.060410037266889885,
+       0.08916425701935077
+      ],
+      "mape": 0.0834079137779885,
+      "max_abs": 0.1102194913330061,
+      "n_grupos": 4
+     },
+     "fiable": false,
+     "nota": "solo 4 grupos (< 8): el error de validación cruzada es una indicación, no una garantía"
+    },
+    "tiempo": {
+     "s_por_g_cad": 135.12,
+     "cv": {
+      "errores_rel": [
+       -0.15961950722165852,
+       0.09544487132698956,
+       0.02948866107670437,
+       0.023346113771547296
+      ],
+      "mape": 0.07697478834922493,
+      "max_abs": 0.15961950722165852,
+      "n_grupos": 4
+     },
+     "fiable": false,
+     "nota": "solo 4 grupos (< 8): el error de validación cruzada es una indicación, no una garantía"
+    }
+   },
+   "kobra_2_neo": {
+    "filamento_g": 405.4,
+    "tiempo_s": 90953.0,
+    "tiempo_h": 25.26,
+    "desvio_frente_cad": -0.1341,
+    "desvio_frente_449_8": -0.0987,
+    "desvio_frente_464": -0.1262,
+    "filas": [
+     {
+      "placa": 1,
+      "cad": 131.75,
+      "g": 120.08,
+      "t": 29398.0
+     },
+     {
+      "placa": 2,
+      "cad": 72.81,
+      "g": 58.28,
+      "t": 12942.0
+     },
+     {
+      "placa": 3,
+      "cad": 229.57,
+      "g": 199.69,
+      "t": 42200.0
+     },
+     {
+      "placa": 4,
+      "cad": 34.09,
+      "g": 27.37,
+      "t": 6413.0
+     }
+    ],
+    "filamento": {
+     "razon": 0.8411,
+     "cv": {
+      "errores_rel": [
+       -0.09813558445584968,
+       0.07020951293260276,
+       -0.0431949127509405,
+       0.06564993415074227
+      ],
+      "mape": 0.0692974860725338,
+      "max_abs": 0.09813558445584968,
+      "n_grupos": 4
+     },
+     "fiable": false,
+     "nota": "solo 4 grupos (< 8): el error de validación cruzada es una indicación, no una garantía"
+    },
+    "tiempo": {
+     "s_por_g_cad": 190.38,
+     "cv": {
+      "errores_rel": [
+       -0.17972556704999934,
+       0.09992133401088145,
+       0.048887526073494066,
+       0.016201959094530247
+      ],
+      "mape": 0.08618409655722628,
+      "max_abs": 0.17972556704999934,
+      "n_grupos": 4
+     },
+     "fiable": false,
+     "nota": "solo 4 grupos (< 8): el error de validación cruzada es una indicación, no una garantía"
+    }
+   }
+  }
+ },
+ "aviso": "digital: ninguna cifra es una medida física"
+}

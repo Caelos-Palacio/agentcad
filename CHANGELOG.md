@@ -1,5 +1,15 @@
 # Registro de cambios
 
+## 0.3.0
+
+Laminado (todo digital; ningún gcode ni STL del proyecto de origen se publica, solo tablas pequeñas):
+- **Bloque `check_gcode`** (`agentcad/gcode.py`): analizador de gcode determinista y genérico portado del proyecto de origen (sus 16 pruebas pasan más 5 de tolerancia a Orca/Prusa: tipos en cualquier capitalización, `; printing object`, gcode sin `;Z:`, cabecera de laminador). Perfil de máquina en `[gcode.perfiles.<nombre>]`
+  de `agentcad.toml`; manifiesto con unidades (`mm3/s`), cacheable, simulado, `deshacer` no aplicable. Ejemplo autocontenido (`generar_gcode.py`) y pipeline `revisar_laminado`. Nuevas unidades: `mm3/s` (caudal) y `s`/`min`/`h` (tiempo).
+- **Bloque `estimar_impresion`** y `agentcad/calibracion.py`: razón ajustada por error relativo, validación cruzada dejando fuera un grupo, `fiable` solo con >= 8 grupos. Sin calibración declarada en `[calibracion]` no devuelve cifras.
+- **`validacion/laminador/`**: comparación de `check_printability` con lo que encontró el laminador (A: rebanado STL sin soportes, B: gcode con soportes), masa y tiempo de 12 laminados (3 impresoras x 4 placas) y calibración; `extraer.py` (solo lectura del origen), `metricas.py`, `datos/*.json`, `INFORME.md`.
+- Catálogo: 9 a 11 bloques, de 2045 a 2777 caracteres (~585 a ~795 tokens a 3,5 caracteres/token).
+- Hallazgos de la comparación anotados en `LIMITACIONES.md` (sin cambios en el núcleo de `check_printability`).
+
 ## 0.2.0
 
 F6: caso de uso documentado en `docs/caso_brazo_robotico.md` (cifras del proyecto de origen, todas digitales).

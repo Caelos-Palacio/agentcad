@@ -96,3 +96,16 @@ velocidad_max_mm_s = 300
 velocidad_primera_capa_mm_s = 50
 limites_rol = { "Outer wall" = 120, "Sparse infill" = 120 }
 densidad_g_cm3 = 1.27
+
+# estimar_impresion: calibración DECLARADA (razón y error). Estos valores son de OTRO proyecto (Kobra 3, PETG, 0,4 mm; ver validacion/laminador/INFORME.md): no aplican a tus piezas ni a tu laminador.
+# Ajusta los tuyos con agentcad.calibracion.calibrar(filas, 'masa_cad', 'filamento', 'placa'). Con menos de 8 grupos de calibración el bloque avisa `fiable: false`.
+[calibracion]
+perfil = "kobra3_petg_otro_proyecto"
+
+[calibracion.perfiles.kobra3_petg_otro_proyecto]
+razon_filamento = 0.810          # filamento del laminador / masa estimada del CAD (sin soportes)
+error_filamento_rel = 0.11       # máx. error relativo de validación cruzada (dejando fuera una placa)
+s_por_g = 135.1                  # segundos de impresión por gramo de masa del CAD
+error_tiempo_rel = 0.16
+n_grupos = 4
+origen = "4 placas de otro proyecto, Kobra 3"

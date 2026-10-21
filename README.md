@@ -6,7 +6,7 @@
 > structured, deterministic tools for 3D-printable designs: `describe_part`, `check_interference`, `check_printability`, `evaluate_structure` (returns `no_validado` when there is no load model),
 > `apply_hex_lightening`, `check_spec` (spec-as-code, JSON Schema), plus a compact catalog of composable *blocks* (unos 600 tokens), declarative JSON pipelines (`si` / `para_cada` / `en_fallo` / rollback),
 > an executor with dry-run validation, run journal, resume and a simulated mode. Central principle: **a digital result is never labelled as physical.** Everything here is digital verification;
-> nothing replaces printing, assembling and testing the part. Alpha (0.2.0), Spanish-language docs and messages. MIT licence. See `LIMITACIONES.md` for the honest list of known defects.
+> nothing replaces printing, assembling and testing the part. Alpha (0.3.0), Spanish-language docs and messages. MIT licence. See `LIMITACIONES.md` for the honest list of known defects.
 
 ## Por qué
 
@@ -23,7 +23,7 @@ Un agente que modifica un diseño necesita comprobarlo en el bucle, y necesita q
 |---|---|
 | Herramientas (MCP/CLI/Python) | `describe_part`, `check_interference`, `check_printability`, `evaluate_structure`, `apply_hex_lightening`, `check_spec`, `record_result`, `verify_registro` |
 | Spec-as-code | `agentcad/spec_schema.json` (JSON Schema), `check_spec_file`, pruebas derivadas de cada spec (`python -m agentcad.spec_tests`) |
-| Bloques | 9 bloques componibles con `MANIFIESTO` tipado y catálogo de una línea por bloque |
+| Bloques | 11 bloques componibles con `MANIFIESTO` tipado y catálogo de una línea por bloque |
 | Pipelines | JSON declarativo, dry-run (`validar`), ejecución con diario/checkpoints/reanudación, modo simulado |
 | Metodología | SDD, TDD y BDD en español (`docs/SDD.md`, escenarios Gherkin con ejecutor propio), medidor de cobertura propio |
 
@@ -87,15 +87,17 @@ $ agentcad catalogo
 aplicar_params [D] config:str pieza:str? -> piezas_activas:arr anteriores:obj | Fija en params.scad los parámetros y el flag de cada pieza elegida (JSON de configuración) y ejecuta sus emisores.
 backup [D] etiqueta:str -> ruta:str ya_existia:bool | Copia parámetros, ensamblaje, STL y los archivos de [respaldo] a build/backup_<etiqueta>/ (idempotente).
 build [P] - -> ok:bool masa_g:num[g] log:str | Ejecuta el comando [build] de agentcad.toml bajo flock y devuelve la masa estimada del conjunto.
-informe [-] etiqueta:str diario:str filas:arr? extra:arr? -> ruta:str incumplimientos:int revertidas:arr | Escribe build/INFORME_<etiqueta>.md desde el diario del pipeline: pasos, puertas por pieza, rollback...
-puerta_imprimibilidad [PC] pieza:str base:str? -> ok:bool nuevos_fallos:arr estado:str | Puerta: la pieza no incumple ningún criterio de imprimibilidad que la línea base sí cumpla (pared, voladizos, islas, p...
-puerta_interferencia [PC] pieza:str pose:str? conocido_mm3:num[mm3]? -> ok:bool volumen_mm3:num[mm3] estado:str | Puerta: la pieza no interfiere (> 0,1 mm3) con sus vecinas, salvo el volumen conocido declara...
-puerta_margen_fem [C] config:str pieza:str -> ok:bool base:num[adimensional] candidato:num[adimensional] incumple_criterio:bool estado:str nota:str | Puerta: el margen FEM de la pieza no es peor que el de la...
+check_gcode [PC] archivo:str perfil:str? guardar:bool? -> ok:bool errores:int avisos:int capas:int islas:int puentes_largos:int voladizos:int soportes_sin_cama:int fuera_de_cama:int caudal_max:num[mm3/s] z_max:num[mm] masa_g:num[g] mensajes:arr detalle:str | Analiza un gcode: islas flotantes, puentes, voladizos, soportes sin cama, límites de cama/Z, temperaturas, caudal, inicio/fin.
+estimar_impresion [C] masa_g:num[g] perfil:str? -> filamento_g:num[g] filamento_min_g:num[g] filamento_max_g:num[g] tiempo_h:num[h] tiempo_min_h:num[h] tiempo_max_h:num[h] fiable:bool nota:str | Estima filamento y tiempo de impresión desde la masa del CAD con una calibración declarada y su error; sin calibración no da cifras.
+informe [-] etiqueta:str diario:str filas:arr? extra:arr? -> ruta:str incumplimientos:int revertidas:arr | Escribe build/INFORME_<etiqueta>.md desde el diario del pipeline: pasos, puertas por pieza, rollbacks, incumplimientos conocidos y digital vs físico.
+puerta_imprimibilidad [PC] pieza:str base:str? -> ok:bool nuevos_fallos:arr estado:str | Puerta: la pieza no incumple ningún criterio de imprimibilidad que la línea base sí cumpla (pared, voladizos, islas, puentes).
+puerta_interferencia [PC] pieza:str pose:str? conocido_mm3:num[mm3]? -> ok:bool volumen_mm3:num[mm3] estado:str | Puerta: la pieza no interfiere (> 0,1 mm3) con sus vecinas, salvo el volumen conocido declarado (agentcad.check_interference).
+puerta_margen_fem [C] config:str pieza:str -> ok:bool base:num[adimensional] candidato:num[adimensional] incumple_criterio:bool estado:str nota:str | Puerta: el margen FEM de la pieza no es peor que el de la línea base a igual malla; marca el incumplimiento conocido si queda bajo el criterio.
 puerta_masa [-] base_g:num[g] tolerancia_g:num[g]? -> ok:bool masa_g:num[g] delta_g:num[g] | Puerta: la masa estimada del conjunto no supera la de la revisión base (+ tolerancia).
-puerta_pared_min [PC] pieza:str umbral_mm:num[mm]? base:str? -> ok:bool pared_min_mm:num[mm] veredicto:str preexistente:bool vertical_no_resuelto:bool | Puerta: pared mínima imprimible >= umbral, o no peor q...
+puerta_pared_min [PC] pieza:str umbral_mm:num[mm]? base:str? -> ok:bool pared_min_mm:num[mm] veredicto:str preexistente:bool vertical_no_resuelto:bool | Puerta: pared mínima imprimible >= umbral, o no peor que la línea base si esta ya incumplía (check_printability).
 ```
 
-El catálogo completo ocupa unos 2 kB (alrededor de 650 tokens; una prueba vigila que no pase de 2.500). `[mm]`, `[g]`... son las **unidades** de cada campo numérico y `C` marca los bloques **cacheables** (deterministas). Las **puertas** devuelven siempre `ok`; un bloque `pesado` toma solo la cola `flock` compartida;
+El catálogo completo ocupa unos 2,8 kB (alrededor de 800 tokens por estimación de 3,5 caracteres/token; era 2,0 kB y ~585 con 9 bloques; una prueba vigila que no pase de 2.500). `[mm]`, `[g]`... son las **unidades** de cada campo numérico y `C` marca los bloques **cacheables** (deterministas). Las **puertas** devuelven siempre `ok`; un bloque `pesado` toma solo la cola `flock` compartida;
 las salidas son pequeñas (máx. 4 KB: rutas + cifras) y los datos pesados viajan por referencia.
 
 ## Componer un pipeline
@@ -160,6 +162,27 @@ agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ning
 Extraído de un brazo robótico impreso en 3D: el flujo de agentes bajó el conjunto de 490,1 g (rev. 3.7) a 463,7 g (rev. 3.8), cazó un nervio de 0,67 mm que el FEM de 1 mm no veía y **rechazó** `turret_c` porque su margen bajaba (2,03 a 1,97).
 `base_flange` 76,8 a 57,0 g con margen 0,34 a 0,68 (sigue incumpliendo >= 2, declarado). Todo digital: falta imprimir, pesar y ensayar. Detalle y límites en [`docs/caso_brazo_robotico.md`](docs/caso_brazo_robotico.md).
 
+## Laminado: `check_gcode`, comparación con el laminador y calibración
+
+- **`check_gcode`** (bloque, núcleo en `agentcad/gcode.py`): analiza un gcode ya laminado (Orca/Prusa-like, comentarios `;TYPE:`) capa a capa y por objeto: islas flotantes, puentes largos, voladizos, soportes que no parten de la cama, límites de cama y Z, temperaturas,
+  velocidad, caudal volumétrico, inicio/fin y filamento. Cama, altura y límites se declaran en `[gcode.perfiles.<nombre>]` de `agentcad.toml`; el ejemplo trae un gcode diminuto **sintético**
+  (`python generar_gcode.py`, ignorado por git) y el pipeline `revisar_laminado`. No hay modo físico: `deshacer` no aplica (solo lee) y el modo simulado devuelve cifras sintéticas.
+- **`estimar_impresion`** (bloque): filamento y tiempo desde la masa del CAD con una **razón y un error declarados** en `[calibracion]` (se ajustan con `agentcad.calibracion.calibrar`). Sin calibración no da cifras; con menos de 8 grupos avisa `fiable: false`.
+- **Datos y honestidad** en [`validacion/laminador/INFORME.md`](validacion/laminador/INFORME.md): 16 piezas de 4 placas del brazo, laminadas con Anycubic Slicer Next para 3 impresoras (los gcodes, 463 MB, no se publican; solo tablas pequeñas). `check_printability`
+  frente al rebanado de la STL sin soportes (A) y frente al gcode con soportes del laminador (B), sobre 16 piezas:
+
+| categoría | verdad | TP | FP | FN | TN |
+|---|---|--:|--:|--:|--:|
+| islas | A | 4 | 1 | 0 | 11 |
+| islas | B | 0 | 5 | 0 | 11 |
+| puentes largos | A | 4 | 0 | 1 | 11 |
+| puentes largos | B | 3 | 1 | 1 | 11 |
+| voladizos | A | 6 | 0 | 2 | 8 |
+| voladizos | B | 4 | 2 | 3 | 7 |
+
+  Son cifras de un solo caso con pocos positivos. Frente a B, las islas «FP» son las que el laminador cubre con soporte; los FN de voladizos son voladizos locales en piezas grandes que el umbral del 2 % del área total no ve. Masa: el estimador del CAD da 468 g y el laminador 393 a 405 g
+  (con soportes), 12 % por debajo de los 449,8 g citados; tiempos de 17 h 55 min a 25 h 15 min por juego. Un modelo de una razón por impresora tiene error de validación cruzada del 7 al 8 % medio (máx. 10 % en filamento, 16 a 18 % en tiempo) con **solo 4 placas**: indicativo, no fiable. Todo digital.
+
 ## Verificación numérica del solver
 
 El FEM voxel se **verificó numéricamente contra soluciones analíticas** (no hay validación física con ensayos). Suite en [`validacion/`](validacion/README.md), tablas completas en [`validacion/TABLAS.md`](validacion/TABLAS.md):
@@ -189,7 +212,7 @@ diámetro (<= 10 %). `evaluate_structure` usa esa tabla: devuelve `fidelity.erro
 ## Pruebas
 
 ```bash
-python -m unittest discover -s tests -t .                     # suite completa (535 pruebas, ~1-2 min)
+python -m unittest discover -s tests -t .                     # suite completa (unas 600 pruebas, ~2 min)
 AGENTCAD_RAPIDAS=1 python -m unittest discover -s tests -t .  # sin las pesadas (FEM, voxelización fina, procesos con límites, aligerado)
 python -m agentcad.bdd_runner tests/features/pipelines --pasos tests/features/pipelines/pasos_pipeline.py   # escenarios Gherkin en español
 python -m agentcad.cobertura --excluir 'tests/*' -- discover -s tests -t .      # cobertura de líneas con sys.monitoring (sin dependencias)

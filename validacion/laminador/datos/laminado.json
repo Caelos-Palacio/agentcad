@@ -1,0 +1,150 @@
+{
+ "placas": {
+  "1": {
+   "volumen_mm3": 103738.81,
+   "area_mm2": 81196.52,
+   "masa_cad_g": 131.75,
+   "piezas": 9
+  },
+  "2": {
+   "volumen_mm3": 62559.33,
+   "area_mm2": 41275.17,
+   "masa_cad_g": 72.81,
+   "piezas": 8
+  },
+  "3": {
+   "volumen_mm3": 190497.58,
+   "area_mm2": 121926.93,
+   "masa_cad_g": 229.57,
+   "piezas": 7
+  },
+  "4": {
+   "volumen_mm3": 26838.73,
+   "area_mm2": 25537.61,
+   "masa_cad_g": 34.09,
+   "piezas": 1
+  }
+ },
+ "filas": [
+  {
+   "impresora": "kobra_x",
+   "placa": 1,
+   "tiempo_s": 22851.0,
+   "filamento_g": 116.66,
+   "filamento_m": 38.19,
+   "capas": 178,
+   "z_max_mm": 29.84,
+   "capas_con_soporte": 256
+  },
+  {
+   "impresora": "kobra_x",
+   "placa": 2,
+   "tiempo_s": 10094.0,
+   "filamento_g": 55.81,
+   "filamento_m": 18.27,
+   "capas": 139,
+   "z_max_mm": 18.16,
+   "capas_con_soporte": 178
+  },
+  {
+   "impresora": "kobra_x",
+   "placa": 3,
+   "tiempo_s": 33777.0,
+   "filamento_g": 194.49,
+   "filamento_m": 63.67,
+   "capas": 807,
+   "z_max_mm": 115.04,
+   "capas_con_soporte": 531
+  },
+  {
+   "impresora": "kobra_x",
+   "placa": 4,
+   "tiempo_s": 4787.0,
+   "filamento_g": 26.08,
+   "filamento_m": 8.54,
+   "capas": 73,
+   "z_max_mm": 14.64,
+   "capas_con_soporte": 0
+  },
+  {
+   "impresora": "kobra_3",
+   "placa": 1,
+   "tiempo_s": 20443.0,
+   "filamento_g": 116.88,
+   "filamento_m": 38.26,
+   "capas": 178,
+   "z_max_mm": 29.84,
+   "capas_con_soporte": 256
+  },
+  {
+   "impresora": "kobra_3",
+   "placa": 2,
+   "tiempo_s": 9211.0,
+   "filamento_g": 55.98,
+   "filamento_m": 18.33,
+   "capas": 139,
+   "z_max_mm": 18.16,
+   "capas_con_soporte": 176
+  },
+  {
+   "impresora": "kobra_3",
+   "placa": 3,
+   "tiempo_s": 30359.0,
+   "filamento_g": 195.0,
+   "filamento_m": 63.83,
+   "capas": 807,
+   "z_max_mm": 115.04,
+   "capas_con_soporte": 530
+  },
+  {
+   "impresora": "kobra_3",
+   "placa": 4,
+   "tiempo_s": 4528.0,
+   "filamento_g": 25.95,
+   "filamento_m": 8.49,
+   "capas": 73,
+   "z_max_mm": 14.64,
+   "capas_con_soporte": 0
+  },
+  {
+   "impresora": "kobra_2_neo",
+   "placa": 1,
+   "tiempo_s": 29398.0,
+   "filamento_g": 120.08,
+   "filamento_m": 39.31,
+   "capas": 178,
+   "z_max_mm": 29.84,
+   "capas_con_soporte": 256
+  },
+  {
+   "impresora": "kobra_2_neo",
+   "placa": 2,
+   "tiempo_s": 12942.0,
+   "filamento_g": 58.28,
+   "filamento_m": 19.08,
+   "capas": 139,
+   "z_max_mm": 18.16,
+   "capas_con_soporte": 178
+  },
+  {
+   "impresora": "kobra_2_neo",
+   "placa": 3,
+   "tiempo_s": 42200.0,
+   "filamento_g": 199.69,
+   "filamento_m": 65.37,
+   "capas": 807,
+   "z_max_mm": 115.04,
+   "capas_con_soporte": 531
+  },
+  {
+   "impresora": "kobra_2_neo",
+   "placa": 4,
+   "tiempo_s": 6413.0,
+   "filamento_g": 27.37,
+   "filamento_m": 8.96,
+   "capas": 73,
+   "z_max_mm": 14.64,
+   "capas_con_soporte": 0
+  }
+ ]
+}

@@ -86,3 +86,30 @@ def medida(ctx, pieza, campo, defecto=None):
     return fuente.get(campo, defecto)
 def masa_pieza(ctx, pieza):
     s = sim(ctx)['piezas'][pieza]; return round(s['masa_base_g'] - (s['ahorro_g'] if pieza_activa(ctx, pieza) else 0), 2)
+
+# --- huellas de datos para la caché (ver agentcad/cache.py) ------------------------------------------------------------
+def _sha_pieza(parte):
+    from .. import geom, cache
+    try: return cache.sha256_fichero(geom.resolver(parte)['ruta'])
+    except Exception as ex: return f'sin_resolver:{type(ex).__name__}:{getattr(ex, "codigo", "")}'
+
+def huella_base(ctx=None):
+    """sha256 de agentcad.toml y versión de agentcad: toda salida depende de la configuración del proyecto."""
+    from .. import cache, __version__
+    pr = proy(ctx); return dict(toml=cache.sha256_fichero(pr.archivo) if pr.archivo else None, agentcad=__version__)
+
+def huella_pieza(parte, ctx=None, base=None):
+    """Huella de la pieza (sha256 del STL que resuelve), de su línea base si se da, y de la configuración."""
+    from .. import cache
+    from . import _pieza
+    h = dict(pieza=_sha_pieza(parte), **huella_base(ctx))
+    if base: h['base'] = cache.sha256_fichero(_pieza.base(parte, ctx, base))
+    return h
+
+def huella_ensamblaje(ctx=None):
+    """sha256 del ensamblaje y de cada STL que referencia."""
+    from .. import cache
+    pr = proy(ctx); fa = pr.ensamblaje; h = dict(ensamblaje=cache.sha256_fichero(fa) if fa else None, partes={})
+    if fa and fa.is_file():
+        for p in json.loads(fa.read_text()).get('parts', []): h['partes'][p['file']] = cache.sha256_fichero(pr.raiz / p['file'])
+    return h

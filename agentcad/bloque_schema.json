@@ -14,12 +14,13 @@
   "deshacible": {"type": "boolean"},
   "honestidad": {"type": "string", "minLength": 10},
   "estado": {"type": "string", "enum": ["estable", "borrador"]},
-  "ejemplo": {"type": "object"}
+  "ejemplo": {"type": "object"},
+  "determinista": {"type": "boolean"}
  },
  "$defs": {
   "campo": {
    "type": "object", "required": ["type"],
-   "properties": {"type": {"enum": ["string", "number", "integer", "boolean", "object", "array", "any"]}, "descripcion": {"type": "string"}}
+   "properties": {"type": {"enum": ["string", "number", "integer", "boolean", "object", "array", "any"]}, "descripcion": {"type": "string"}, "unidad": {"type": "string"}}
   }
  }
 }

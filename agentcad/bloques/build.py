@@ -1,7 +1,7 @@
 import json
 from ._base import raiz, proy, ejecutar_cmd, escribir_estado, estado, simulado, sim, masa_pieza, masa_conjunto_g
 MANIFIESTO = dict(nombre='build', descripcion='Ejecuta el comando [build] de agentcad.toml bajo flock y devuelve la masa estimada del conjunto.',
-    entradas={}, salidas={'ok': {'type': 'boolean'}, 'masa_g': {'type': 'number'}, 'log': {'type': 'string'}},
+    entradas={}, salidas={'ok': {'type': 'boolean'}, 'masa_g': {'type': 'number', 'unidad': 'g'}, 'log': {'type': 'string'}},
     precondiciones=['[build].comando declarado en agentcad.toml (lista argv, cwd = raíz del proyecto)'], efectos=['lo que haga el comando de build (p. ej. regenerar STL y ensamblaje)', 'escribe rutas.estado_build'], ejemplo={}, pesado=True, deshacible=False,
     honestidad='masa estimada desde mallas con el perfil de impresión; no es peso medido')
 def ejecutar(e, ctx):

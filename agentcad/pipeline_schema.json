@@ -11,7 +11,7 @@
   "pasos": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/paso"}}
  },
  "$defs": {
-  "campo": {"type": "object", "required": ["type"], "properties": {"type": {"enum": ["string", "number", "integer", "boolean", "object", "array"]}, "default": {}, "descripcion": {"type": "string"}}},
+  "campo": {"type": "object", "required": ["type"], "properties": {"type": {"enum": ["string", "number", "integer", "boolean", "object", "array"]}, "default": {}, "descripcion": {"type": "string"}, "unidad": {"type": "string"}}},
   "enfallo": {"anyOf": [
    {"enum": ["abortar", "saltar", "reintentar"]},
    {"type": "object", "required": ["accion"], "additionalProperties": false,

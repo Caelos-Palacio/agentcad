@@ -53,6 +53,8 @@ _reg('verify_registro', 'Verifica la cadena de hashes del registro: integra / pr
      _entrada({}), {'type': 'object', 'required': ['integra'], 'properties': {'integra': B, 'lineas': I, 'primera_linea_rota': {'type': ['integer', 'null']}}},
      'agentcad.registro:verificar_cadena', 30, 1000, pesada=False)
 
+CON_PROCEDENCIA = ('describe_part', 'check_interference', 'check_printability', 'evaluate_structure', 'apply_hex_lightening', 'check_spec')
+
 def _cargar(ruta):
     mod, fn = ruta.split(':'); import importlib
     return getattr(importlib.import_module(mod), fn)
@@ -63,5 +65,10 @@ def llamar_directo(nombre, args):
     if t is None: return dict(estado='error', codigo='herramienta_desconocida', mensaje=f'herramientas: {sorted(TOOLS)}')
     err = schema.validate(args if args is not None else {}, t['inputSchema'])
     if err: return dict(estado='error', codigo='argumentos_invalidos', mensaje='; '.join(err[:6]))
-    try: return _cargar(t['funcion'])(**(args or {}))
+    try:
+        r = _cargar(t['funcion'])(**(args or {}))
+        if isinstance(r, dict) and r.get('estado') == 'ok' and nombre in CON_PROCEDENCIA:
+            from . import procedencia
+            r['procedencia'] = procedencia.para_herramienta(nombre, args or {})
+        return r
     except ErrorHerramienta as e: return e.como_dict()

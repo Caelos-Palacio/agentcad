@@ -3,10 +3,19 @@ from pathlib import Path
 from ._base import raiz
 MANIFIESTO = dict(nombre='puerta_margen_fem', descripcion='Puerta: el margen FEM de la pieza no es peor que el de la línea base a igual malla; marca el incumplimiento conocido si queda bajo el criterio.',
     entradas={'config': {'type': 'string'}, 'pieza': {'type': 'string'}},
-    salidas={'ok': {'type': 'boolean'}, 'base': {'type': 'number'}, 'candidato': {'type': 'number'}, 'incumple_criterio': {'type': 'boolean'}, 'estado': {'type': 'string'}, 'nota': {'type': 'string'}},
+    salidas={'ok': {'type': 'boolean'}, 'base': {'type': 'number', 'unidad': 'adimensional'}, 'candidato': {'type': 'number', 'unidad': 'adimensional'}, 'incumple_criterio': {'type': 'boolean'}, 'estado': {'type': 'string'}, 'nota': {'type': 'string'}},
     precondiciones=['config.piezas.<p>.fem = {base, cand, malla_mm, criterio?, nota?}; base/cand = número o ruta a JSON con margin_min'], efectos=[], ejemplo={'config': 'config.json', 'pieza': 'soporte'}, pesado=False, deshacible=False,
-    honestidad='digital: FEM vóxel de hexaedros lineales (más rígido que la teoría); no prueba resistencia física. Sin FEM registrado => no_validado (ok=false, nunca se inventa una cifra)')
+    determinista=True, honestidad='digital: FEM vóxel de hexaedros lineales (más rígido que la teoría); no prueba resistencia física. Sin FEM registrado => no_validado (ok=false, nunca se inventa una cifra)')
 def _val(r, v): return float(v) if isinstance(v, (int, float)) else float(json.loads((r / v).read_text())['margin_min'])
+def huella(e, ctx):
+    from ._base import huella_base
+    from .. import cache
+    r = raiz(ctx); f = r / e['config']; h = dict(config=cache.sha256_fichero(f), **huella_base(ctx))
+    try:
+        for v in (json.loads(f.read_text())['piezas'][e['pieza']].get('fem') or {}).values():
+            if isinstance(v, str): h[v] = cache.sha256_fichero(r / v)
+    except Exception: pass
+    return h
 def ejecutar(e, ctx):
     r = raiz(ctx); f = json.loads((r / e['config']).read_text())['piezas'][e['pieza']].get('fem')
     if not f: return dict(ok=False, base=0.0, candidato=0.0, incumple_criterio=False, estado='no_validado', nota='sin FEM registrado para la pieza')

@@ -6,9 +6,9 @@
   "etiqueta": {"type": "string", "descripcion": "etiqueta de la variante nueva, p. ej. v2"},
   "etiqueta_anterior": {"type": "string", "descripcion": "etiqueta de la variante anterior (nombre del respaldo)"},
   "config": {"type": "string", "descripcion": "JSON de parámetros elegidos por pieza (ver ejemplos/soporte_simple/config_variante.json)"},
-  "base_g": {"type": "number", "descripcion": "masa estimada del conjunto en la variante anterior (g)"},
-  "tolerancia_masa_g": {"type": "number", "default": 0.0},
-  "pared_min_mm": {"type": "number", "default": 1.2},
+  "base_g": {"type": "number", "unidad": "g", "descripcion": "masa estimada del conjunto en la variante anterior (g)"},
+  "tolerancia_masa_g": {"type": "number", "unidad": "g", "default": 0.0},
+  "pared_min_mm": {"type": "number", "unidad": "mm", "default": 1.2},
   "max_rollbacks": {"type": "integer", "default": 3}
  },
  "pasos": [

@@ -1,7 +1,7 @@
 from ._base import estado
 MANIFIESTO = dict(nombre='puerta_masa', descripcion='Puerta: la masa estimada del conjunto no supera la de la revisión base (+ tolerancia).',
-    entradas={'base_g': {'type': 'number', 'descripcion': 'masa estimada de la revisión anterior (g)'}, 'tolerancia_g': {'type': 'number', 'default': 0.0}},
-    salidas={'ok': {'type': 'boolean'}, 'masa_g': {'type': 'number'}, 'delta_g': {'type': 'number'}},
+    entradas={'base_g': {'type': 'number', 'unidad': 'g', 'descripcion': 'masa estimada de la revisión anterior (g)'}, 'tolerancia_g': {'type': 'number', 'default': 0.0, 'unidad': 'g'}},
+    salidas={'ok': {'type': 'boolean'}, 'masa_g': {'type': 'number', 'unidad': 'g'}, 'delta_g': {'type': 'number', 'unidad': 'g'}},
     precondiciones=['bloque build ejecutado antes (rutas.estado_build con masa_g)'], efectos=[], ejemplo={'base_g': 1000}, pesado=False, deshacible=False,
     honestidad='masa estimada desde mallas, no pesada; falta imprimir y pesar para confirmarla')
 def ejecutar(e, ctx):

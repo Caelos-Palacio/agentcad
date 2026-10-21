@@ -4,7 +4,7 @@
  "descripcion": "Reconstruye el ejemplo y pasa las puertas digitales (pared mínima, interferencia, imprimibilidad) a una pieza; escribe el informe.",
  "parametros": {
   "pieza": {"type": "string", "descripcion": "pieza de rutas.stl, p. ej. placa_soporte"},
-  "pared_min_mm": {"type": "number", "default": 1.2}
+  "pared_min_mm": {"type": "number", "unidad": "mm", "default": 1.2}
  },
  "pasos": [
   {"id": "construir", "bloque": "build", "en_fallo": "reintentar"},

@@ -2,6 +2,13 @@
 
 ## Sin publicar
 
+F3 (con pruebas, TDD):
+- **Caché por hash de entradas** para bloques deterministas (`determinista=True`; `agentcad/cache.py`); `puerta_pared_min`, `puerta_imprimibilidad`, `puerta_interferencia` y `puerta_margen_fem` la usan. Marca `C` en el catálogo.
+- **Unidades tipadas** (`agentcad/unidades.py`) en esquemas de bloques y parámetros de pipelines, con comprobación de compatibilidad en el dry-run; los bloques de agentcad declaran mm, mm3, g y adimensional.
+- **Procedencia** (`agentcad/procedencia.py`): sha256 de STL, spec y configuración, solver, versiones y commit en cada salida de herramienta, en el registro encadenado y en el diario de pipelines.
+- **Adaptadores** en `integraciones/` para Snakemake, LangGraph y Airflow (probados solo con dobles; no probados con la librería real).
+- Las pruebas trabajan sobre una copia temporal del ejemplo (no escriben nada en el repositorio).
+
 - `puerta_pared_min` (sincronizado con el origen): compara con la línea base (`base`, defecto `linea_base`); un defecto preexistente que no empeora pasa con veredicto `preexistente_no_peor` y `preexistente=true`;
   una racha vertical de <= 1,5 vóxeles se descarta como aliasing y se informa (`vertical_no_resuelto`). 19 pruebas del bloque.
 

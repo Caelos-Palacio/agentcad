@@ -1,0 +1,22 @@
+# Ejemplo de reglas Snakemake sobre agentcad. NO PROBADO CON SNAKEMAKE REAL (solo con dobles). Ejecutar desde ejemplos/soporte_simple (o AGENTCAD_PROYECTO=...).
+import sys
+sys.path.insert(0, "../../integraciones/snakemake")
+import agentcad_snakemake
+
+PIEZAS = ["placa_soporte"]
+
+rule all:
+    input: expand("resultados/{pieza}.pared.json", pieza=PIEZAS), expand("resultados/{pieza}.interferencia.json", pieza=PIEZAS)
+
+# Snakemake re-ejecuta si cambia el STL (input); agentcad añade su propia caché por hash y la procedencia.
+rule pared_minima:
+    input: "stl/{pieza}.stl"
+    output: "resultados/{pieza}.pared.json"
+    run: agentcad_snakemake.regla_bloque(output[0], "puerta_pared_min", {"pieza": wildcards.pieza})
+
+rule interferencia:
+    input: "stl/{pieza}.stl", "assembly.json"
+    output: "resultados/{pieza}.interferencia.json"
+    run: agentcad_snakemake.regla_bloque(output[0], "puerta_interferencia", {"pieza": wildcards.pieza})
+
+# Alternativa sin Python: shell: "python -m agentcad bloque puerta_pared_min --entradas '{{\"pieza\": \"{wildcards.pieza}\"}}' > {output}"

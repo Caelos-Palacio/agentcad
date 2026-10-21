@@ -14,7 +14,7 @@ import json, os, re, signal, subprocess, sys, time
 from pathlib import Path
 from . import bloques, schema
 from .bloques import _base
-from . import config
+from . import cache, config, procedencia, unidades
 
 ESQUEMA = json.loads((Path(__file__).resolve().parent / 'pipeline_schema.json').read_text())
 REF = re.compile(r'^\$[A-Za-z_][\w\-]*(\.[\w\-]+)*$')
@@ -64,6 +64,10 @@ def validar(pipe, params=None, B=None):
     err = schema.validate(pipe, ESQUEMA)
     if err: return err
     decl = pipe['parametros']
+    for k, esq in decl.items():
+        if 'unidad' in esq and not unidades.conocida(esq['unidad']): err.append(f"parámetro {k}: unidad desconocida {esq['unidad']!r}")
+        elif 'unidad' in esq and esq['type'] not in ('number', 'integer'): err.append(f'parámetro {k}: solo un parámetro numérico puede llevar unidad')
+    uni_par = {k: esq['unidad'] for k, esq in decl.items() if 'unidad' in esq}; uni_sal = {}      # unidades de parámetros y de salidas de pasos
     if params is not None:
         for k, esq in decl.items():
             if k not in params and 'default' not in esq: err.append(f'parámetro requerido sin valor: {k}')
@@ -117,6 +121,10 @@ def validar(pipe, params=None, B=None):
                     t = tipo_ref(v, sc)
                     if t is KeyError: err.append(f'{ctxt}: referencia desconocida o posterior {v}')
                     elif not _compat(t, esq['type']): err.append(f"{ctxt}: tipo {t} de {v} no encaja en {esq['type']}")
+                    else:
+                        pu = v[1:].split('.'); uo = uni_par.get(pu[0]) if len(pu) == 1 else (uni_sal.get(pu[0], {}).get(pu[1]) if len(pu) == 2 else None)
+                        mu = unidades.comprobar(uo, esq.get('unidad'))
+                        if mu: err.append(f'{ctxt}: {mu} (origen {v})')
                 else:
                     refs_ok(v, sc, ctxt)
                     if any(True for _ in _recorrer(v)): e2 = schema.validate(v, {'type': esq['type']}) if esq['type'] != 'any' else []
@@ -135,7 +143,7 @@ def validar(pipe, params=None, B=None):
                     elif tgt in orden and orden[rd] < orden[tgt]: err.append(f'{sid}: repetir_desde {rd} es anterior al paso deshecho {tgt}')
                 refs_ok(fl.get('entradas', {}), sc, f'{sid}.en_fallo.entradas')
             elif isinstance(fl, dict) and fl['accion'] != 'reintentar' and 'max' in fl: err.append(f'{sid}: max solo aplica a reintentar y rollback')
-            sc[sid] = ('s', {k: v['type'] for k, v in m['salidas'].items()})
+            sc[sid] = ('s', {k: v['type'] for k, v in m['salidas'].items()}); uni_sal[sid] = {k: v['unidad'] for k, v in m['salidas'].items() if 'unidad' in v}
     sc0 = {k: ('v', v['type']) for k, v in decl.items()}; sc0.update({k: ('v', t) for k, t in INTERNAS.items()})
     # el índice de nivel superior de un bucle contiene a sus pasos internos: lo registramos al entrar en el bucle
     top = {s['id']: i for i, s in enumerate(pipe['pasos'])}
@@ -195,10 +203,13 @@ class Ejecutor:
 
     def _llamar(self, mod, ent):
         m = mod.MANIFIESTO
-        if self.simulado: return (mod.simular if hasattr(mod, 'simular') else mod.ejecutar)(ent, self.ctx)
-        if m['pesado']:
-            with _base.cola(self.espera_cola): return mod.ejecutar(ent, self.ctx)
-        return mod.ejecutar(ent, self.ctx)
+        def correr():
+            if self.simulado: return (mod.simular if hasattr(mod, 'simular') else mod.ejecutar)(ent, self.ctx)
+            if m['pesado']:
+                with _base.cola(self.espera_cola): return mod.ejecutar(ent, self.ctx)
+            return mod.ejecutar(ent, self.ctx)
+        sal, self._cache = cache.con_cache(mod, ent, self.ctx, correr)
+        return sal
 
     def _paso(self, st, vars_, clave, top):
         """Ejecuta una hoja con su política de reintento. Devuelve (ok, salidas) y deja el checkpoint en el diario."""
@@ -208,13 +219,14 @@ class Ejecutor:
         mod = bloques.cargar()[st['bloque']]; fl = st.get('en_fallo'); mx = (fl.get('max', 1) if isinstance(fl, dict) and fl['accion'] == 'reintentar' else 1 if fl == 'reintentar' else 0)
         n = 0
         while True:
-            t0 = time.time(); ent = None
+            t0 = time.time(); ent = None; self._cache = None
             self.d['pasos'][clave] = dict(base, estado='corriendo'); self.guardar()
             try:
                 ent = self._entradas(st, vars_); sal = self._llamar(mod, ent); _comprobar_salidas(mod.MANIFIESTO, sal); ok = sal.get('ok', True) is not False
             except Exception as ex:
                 sal, ok = {'error': f'{type(ex).__name__}: {str(ex)[:300]}'}, False
-            self.d['pasos'][clave] = dict(base, estado='ok' if ok else 'fallo', entradas=_resumen(ent or {}), salidas=sal, segundos=round(time.time() - t0, 2))
+            self.d['pasos'][clave] = dict(base, estado='ok' if ok else 'fallo', entradas=_resumen(ent or {}), salidas=sal, segundos=round(time.time() - t0, 2), **({'cache': self._cache} if self._cache else {}),
+                                         procedencia=dict(bloque_sha256=cache.huella_codigo(mod), entradas_sha256=cache.sha256_bytes(cache._canon(ent or {}).encode()), agentcad=procedencia.__version__))
             self.log(f"{clave} ({st['bloque']}): {'ok' if ok else 'FALLO'} {json.dumps(_resumen(sal, 120), ensure_ascii=False, default=str)}")
             if ok or n >= mx: return ok, sal
             n += 1; self.log(f'{clave}: reintento {n}/{mx}')
@@ -246,7 +258,7 @@ class Ejecutor:
         if not self.simulado and (self.raiz.resolve() != config.raiz_proyecto() or os.environ.get('AGENTCAD_PERMITIR_REAL') != '1'):
             raise PipelineError('modo real no autorizado: exige AGENTCAD_PERMITIR_REAL=1 y la raíz real del proyecto (AGENTCAD_PROYECTO o agentcad.toml; los ensayos usan --simulado sobre una copia)')
         if self.d.get('estado') == 'corriendo' and self.d.get('pid') not in (None, os.getpid()) and _vivo(self.d['pid']): raise PipelineError(f"la corrida ya está en ejecución (pid {self.d['pid']})")
-        self.d['estado'] = 'corriendo'; self.d['pid'] = os.getpid(); self.d.setdefault('inicio', time.strftime('%Y-%m-%dT%H:%M:%S')); self.d.pop('fallo', None); self.guardar()
+        self.d['procedencia'] = procedencia.base(); self.d['estado'] = 'corriendo'; self.d['pid'] = os.getpid(); self.d.setdefault('inicio', time.strftime('%Y-%m-%dT%H:%M:%S')); self.d.pop('fallo', None); self.guardar()
         plano = self.pipe['pasos']; i = 0
         def fallo(clave): self.d['estado'] = 'fallo'; self.d['fallo'] = clave; self.d['fin'] = time.strftime('%Y-%m-%dT%H:%M:%S'); self.guardar(); return self.d
         def politica(fl, clave, st, vars_, sal, top):
@@ -296,10 +308,12 @@ def ejecutar_bloque(nombre, entradas, ctx, espera_cola=900):
     for k, v in e.items():
         if k not in m['entradas']: raise PipelineError(f'{nombre}: entrada desconocida {k}')
         if m['entradas'][k]['type'] != 'any' and (er := schema.validate(v, {'type': m['entradas'][k]['type']})): raise PipelineError(f'{nombre}.{k}: {er[0]}')
-    if ctx.get('simulado'): sal = (mod.simular if hasattr(mod, 'simular') else mod.ejecutar)(e, ctx)
-    elif m['pesado']:
-        with _base.cola(espera_cola): sal = mod.ejecutar(e, ctx)
-    else: sal = mod.ejecutar(e, ctx)
+    def correr():
+        if ctx.get('simulado'): return (mod.simular if hasattr(mod, 'simular') else mod.ejecutar)(e, ctx)
+        if m['pesado']:
+            with _base.cola(espera_cola): return mod.ejecutar(e, ctx)
+        return mod.ejecutar(e, ctx)
+    sal, _ = cache.con_cache(mod, e, ctx, correr)
     _comprobar_salidas(m, sal); return sal
 
 # --- utilidades de CLI --------------------------------------------------------------------------------------------------

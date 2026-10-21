@@ -4,7 +4,7 @@ NO se registra un bloque sin su prueba de contrato `tests/bloques/test_<nombre>.
 Las salidas son pequeñas (rutas + cifras): los datos pesados viajan por referencia. Las puertas incluyen siempre `ok`."""
 import importlib, json, pkgutil
 from pathlib import Path
-from .. import schema
+from .. import schema, unidades
 
 CLAVES = ('nombre', 'descripcion', 'entradas', 'salidas', 'precondiciones', 'efectos', 'pesado', 'deshacible', 'honestidad')
 AQUI = Path(__file__).resolve().parent
@@ -20,6 +20,11 @@ def validar_manifiesto(m):
     if isinstance(m.get('entradas'), dict):
         for k, v in m['entradas'].items():
             if 'default' in v and v.get('type') not in (None, 'any') and schema.validate(v['default'], {'type': v['type']}): err.append(f'$.entradas.{k}: default no es de tipo {v["type"]}')
+    for lado in ('entradas', 'salidas'):
+        for k, v in (m.get(lado) or {}).items() if isinstance(m.get(lado), dict) else []:
+            if 'unidad' in v:
+                if not unidades.conocida(v['unidad']): err.append(f'$.{lado}.{k}: unidad desconocida {v["unidad"]!r}')
+                elif v.get('type') not in ('number', 'integer'): err.append(f'$.{lado}.{k}: solo un campo numérico puede llevar unidad')
     return err
 
 def cargar(forzar=False):
@@ -42,13 +47,13 @@ def cargar(forzar=False):
 
 def _campos(d):
     if not d: return '-'
-    return ' '.join(f"{k}:{_ABREV.get(v['type'], v['type'])}{'?' if 'default' in v else ''}" for k, v in d.items())
+    return ' '.join(f"{k}:{_ABREV.get(v['type'], v['type'])}{'[' + v['unidad'] + ']' if 'unidad' in v else ''}{'?' if 'default' in v else ''}" for k, v in d.items())
 
 def catalogo():
     """Una línea por bloque: nombre [P=pesado D=deshacible] entradas -> salidas | descripción. `?` = opcional."""
-    out = ['# bloque [P pesado, D deshacible] entradas(?=opcional) -> salidas | descripción']
+    out = ['# bloque [P pesado, D deshacible, C cacheable] entradas(?=opcional) -> salidas | descripción']
     for n, mod in sorted(cargar().items()):
-        m = mod.MANIFIESTO; fl = ('P' if m['pesado'] else '') + ('D' if m['deshacible'] else '') or '-'
+        m = mod.MANIFIESTO; fl = ('P' if m['pesado'] else '') + ('D' if m['deshacible'] else '') + ('C' if m.get('determinista') else '') or '-'
         out.append(f"{n} [{fl}{' borrador' if m.get('estado') == 'borrador' else ''}] {_campos(m['entradas'])} -> {_campos(m['salidas'])} | {m['descripcion']}")
     out += [f'! {n} NO registrado: {e}' for n, e in sorted(ERRORES.items())]
     return '\n'.join(out)
@@ -56,7 +61,7 @@ def catalogo():
 def ayuda(nombre):
     mod = cargar().get(nombre)
     if mod is None: raise KeyError(f'bloque desconocido: {nombre}; disponibles: {sorted(cargar())}' + (f'; no registrado: {ERRORES[nombre]}' if nombre in ERRORES else ''))
-    m = mod.MANIFIESTO; fmt = lambda d: '\n'.join(f"  {k}: {v['type']}{' (opcional, defecto ' + json.dumps(v['default'], ensure_ascii=False) + ')' if 'default' in v else ''}{' - ' + v['descripcion'] if v.get('descripcion') else ''}" for k, v in d.items()) or '  -'
+    m = mod.MANIFIESTO; fmt = lambda d: '\n'.join(f"  {k}: {v['type']}{' (opcional, defecto ' + json.dumps(v['default'], ensure_ascii=False) + ')' if 'default' in v else ''}{' [' + v['unidad'] + ']' if 'unidad' in v else ''}{' - ' + v['descripcion'] if v.get('descripcion') else ''}" for k, v in d.items()) or '  -'
     L = [f"{m['nombre']}: {m['descripcion']}", f"pesado={m['pesado']} (flock automático) deshacible={m['deshacible']} en modo simulado: {'modelo sintético sim.json' if hasattr(mod, 'simular') else 'ejecución real sobre la copia'}", 'entradas:', fmt(m['entradas']), 'salidas:', fmt(m['salidas']),
          'precondiciones: ' + ('; '.join(m['precondiciones']) or '-'), 'efectos: ' + ('; '.join(m['efectos']) or '-'), 'digital vs físico: ' + m['honestidad']]
     return '\n'.join(L)

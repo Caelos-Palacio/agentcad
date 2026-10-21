@@ -18,6 +18,10 @@ def version_info():
         except Exception: libs[n] = None
     return dict(agentcad=__version__, python=sys.version.split()[0], librerias=libs, zonas_revision=config.zonas_revision())
 
+def _procedencia(pieza):
+    from . import procedencia
+    p = procedencia.base(); p['pieza'] = procedencia.de_pieza(pieza); return p
+
 def record_result(herramienta, pieza, parametros=None, resultado=None, ensayo=None, nivel_validacion=None, etiqueta=None):
     try:
         if not isinstance(herramienta, str) or not herramienta: raise ErrorHerramienta('parametro_invalido', 'herramienta debe ser una cadena')
@@ -45,7 +49,7 @@ def record_result(herramienta, pieza, parametros=None, resultado=None, ensayo=No
             lineas = [l for l in fh.read().splitlines() if l.strip()]
             previo = json.loads(lineas[-1])['hash_registro'] if lineas else None
             e = dict(n=len(lineas) + 1, ts=time.strftime('%Y-%m-%dT%H:%M:%S%z'), herramienta=herramienta, pieza=str(pieza), etiqueta=etiqueta, entradas=entradas,
-                     hash_entradas=he, parametros=parametros, resultado=resultado, version=version_info(), nivel_validacion=nivel, hash_previo=previo)
+                     hash_entradas=he, parametros=parametros, resultado=resultado, version=version_info(), procedencia=_procedencia(pieza), nivel_validacion=nivel, hash_previo=previo)
             if ensayo is not None: e['ensayo'] = ensayo
             e['hash_registro'] = _sha(e)
             fh.write(_canon(e) + '\n'); fh.flush()

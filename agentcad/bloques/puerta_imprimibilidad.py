@@ -4,7 +4,10 @@ MANIFIESTO = dict(nombre='puerta_imprimibilidad', descripcion='Puerta: la pieza 
     entradas={'pieza': {'type': 'string'}, 'base': {'type': 'string', 'default': 'linea_base'}},
     salidas={'ok': {'type': 'boolean'}, 'nuevos_fallos': {'type': 'array'}, 'estado': {'type': 'string'}},
     precondiciones=['STL actual en rutas.stl y, opcional, STL de la línea base en el directorio [bases].<base>'], efectos=[], ejemplo={'pieza': 'soporte'}, pesado=True, deshacible=False,
-    honestidad='digital: no prueba la capacidad real de la impresora; sin STL base, todo criterio incumplido cuenta como nuevo (estado sin_base)')
+    determinista=True, honestidad='digital: no prueba la capacidad real de la impresora; sin STL base, todo criterio incumplido cuenta como nuevo (estado sin_base)')
+def huella(e, ctx):
+    from ._base import huella_pieza
+    return huella_pieza(e['pieza'], ctx, e.get('base', 'linea_base'))
 def ejecutar(e, ctx):
     from pathlib import Path
     n = _pieza.printabilidad(_pieza.actual(e['pieza'])); bs = _pieza.base(e['pieza'], ctx, e.get('base', 'linea_base')); hay = Path(bs).is_file()

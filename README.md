@@ -83,19 +83,19 @@ El **ensamblaje** (`assembly.json`) es un JSON: `parts: [{id, file, matrix (4x4 
 
 ```
 $ agentcad catalogo
-# bloque [P pesado, D deshacible] entradas(?=opcional) -> salidas | descripción
-aplicar_params [D] config:str pieza:str? -> piezas_activas:arr anteriores:obj | Fija en params.scad los parámetros y el flag de cada pieza elegida ...
+# bloque [P pesado, D deshacible, C cacheable] entradas(?=opcional) -> salidas | descripción
+aplicar_params [D] config:str pieza:str? -> piezas_activas:arr anteriores:obj | Fija en params.scad los parámetros y el flag de cada pieza elegida (JSON de configuración) y ejecuta sus emisores.
 backup [D] etiqueta:str -> ruta:str ya_existia:bool | Copia parámetros, ensamblaje, STL y los archivos de [respaldo] a build/backup_<etiqueta>/ (idempotente).
-build [P] - -> ok:bool masa_g:num log:str | Ejecuta el comando [build] de agentcad.toml bajo flock y devuelve la masa estimada del conjunto.
-informe [-] etiqueta:str diario:str filas:arr? extra:arr? -> ruta:str incumplimientos:int revertidas:arr | Escribe build/INFORME_<etiqueta>.md desde el diario del pipeline ...
-puerta_imprimibilidad [P] pieza:str base:str? -> ok:bool nuevos_fallos:arr estado:str | Puerta: la pieza no incumple ningún criterio de imprimibilidad que la línea base sí cumpla ...
-puerta_interferencia [P] pieza:str pose:str? conocido_mm3:num? -> ok:bool volumen_mm3:num estado:str | Puerta: la pieza no interfiere (> 0,1 mm3) con sus vecinas ...
-puerta_margen_fem [-] config:str pieza:str -> ok:bool base:num candidato:num incumple_criterio:bool estado:str nota:str | Puerta: el margen FEM no es peor que el de la línea base ...
-puerta_masa [-] base_g:num tolerancia_g:num? -> ok:bool masa_g:num delta_g:num | Puerta: la masa estimada del conjunto no supera la de la revisión base (+ tolerancia).
-puerta_pared_min [P] pieza:str umbral_mm:num? -> ok:bool pared_min_mm:num veredicto:str | Puerta: pared mínima imprimible de la pieza >= umbral ...
+build [P] - -> ok:bool masa_g:num[g] log:str | Ejecuta el comando [build] de agentcad.toml bajo flock y devuelve la masa estimada del conjunto.
+informe [-] etiqueta:str diario:str filas:arr? extra:arr? -> ruta:str incumplimientos:int revertidas:arr | Escribe build/INFORME_<etiqueta>.md desde el diario del pipeline: pasos, puertas por pieza, rollback...
+puerta_imprimibilidad [PC] pieza:str base:str? -> ok:bool nuevos_fallos:arr estado:str | Puerta: la pieza no incumple ningún criterio de imprimibilidad que la línea base sí cumpla (pared, voladizos, islas, p...
+puerta_interferencia [PC] pieza:str pose:str? conocido_mm3:num[mm3]? -> ok:bool volumen_mm3:num[mm3] estado:str | Puerta: la pieza no interfiere (> 0,1 mm3) con sus vecinas, salvo el volumen conocido declara...
+puerta_margen_fem [C] config:str pieza:str -> ok:bool base:num[adimensional] candidato:num[adimensional] incumple_criterio:bool estado:str nota:str | Puerta: el margen FEM de la pieza no es peor que el de la...
+puerta_masa [-] base_g:num[g] tolerancia_g:num[g]? -> ok:bool masa_g:num[g] delta_g:num[g] | Puerta: la masa estimada del conjunto no supera la de la revisión base (+ tolerancia).
+puerta_pared_min [PC] pieza:str umbral_mm:num[mm]? base:str? -> ok:bool pared_min_mm:num[mm] veredicto:str preexistente:bool vertical_no_resuelto:bool | Puerta: pared mínima imprimible >= umbral, o no peor q...
 ```
 
-El catálogo completo ocupa unos 1,9 kB (alrededor de 600 tokens; una prueba vigila que no pase de 2.500). Las **puertas** devuelven siempre `ok`; un bloque `pesado` toma solo la cola `flock` compartida;
+El catálogo completo ocupa unos 2 kB (alrededor de 650 tokens; una prueba vigila que no pase de 2.500). `[mm]`, `[g]`... son las **unidades** de cada campo numérico y `C` marca los bloques **cacheables** (deterministas). Las **puertas** devuelven siempre `ok`; un bloque `pesado` toma solo la cola `flock` compartida;
 las salidas son pequeñas (máx. 4 KB: rutas + cifras) y los datos pesados viajan por referencia.
 
 ## Componer un pipeline
@@ -121,6 +121,17 @@ Diario y checkpoints en `<raiz>/build/pipelines/<pipeline>.<corrida>.json`; `age
 los bloques pesados leen un modelo sintético `sim.json` para ensayar la lógica de puertas y rollback sin geometría; el informe lo declara y ninguna cifra simulada prueba nada.
 El **modo real** exige `AGENTCAD_PERMITIR_REAL=1` y la raíz real del proyecto.
 
+## Caché, unidades y procedencia
+
+- **Caché por hash de entradas.** Un bloque con `determinista=True` guarda su resultado en `<raiz>/build/cache/<bloque>/<clave>.json`. La clave es el sha256 del bloque (su código y manifiesto), sus entradas, el modo
+  (real/simulado) y una *huella de datos* (los STL, el ensamblaje y `agentcad.toml`). Si algo cambia, se recalcula; si no, el paso del diario marca `cache: "acierto"`. Se cachean también los `ok: false`
+  (igual de deterministas); una excepción nunca. `AGENTCAD_SIN_CACHE=1` la desactiva. Idea tomada de Snakemake/DVC, implementación propia (`agentcad/cache.py`).
+- **Unidades tipadas.** Los campos numéricos de los bloques y los parámetros de pipelines pueden llevar `unidad` (`mm`, `mm3`, `g`, `kg`, `MPa`, `N`, `grados`, `adimensional`...). El dry-run
+  (`agentcad validar`) rechaza conectar una salida con otra magnitud (`mm` -> `g`) y también una unidad distinta de la misma magnitud (`m` -> `mm`: hay que convertir explícitamente; `agentcad.unidades.convertir`).
+  Un campo sin unidad no se comprueba. No hay conversión implícita.
+- **Procedencia.** Cada salida de herramienta lleva `procedencia` (versión de agentcad y librerías, sha256 del STL, de la spec y de `agentcad.toml`, solver con el hash de su código, commit git del proyecto y de agentcad
+  si existen); también cada línea del registro encadenado por hash (manipularla rompe la cadena) y cada paso del diario de pipelines (sha256 del bloque y de las entradas). `agentcad/procedencia.py`.
+
 ## Añadir un bloque (TDD)
 
 ```bash
@@ -133,7 +144,7 @@ Un bloque es un módulo con `MANIFIESTO` (valida contra `bloque_schema.json`: no
 
 ## Cómo se integra
 
-agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ningún orquestador ni a ningún solver. Hoy se integra por tres vías, todas incluidas:
+agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ningún orquestador ni a ningún solver. Se integra por estas vías, todas incluidas:
 
 1. **Servidor MCP por stdio** (JSON-RPC 2.0, un mensaje JSON por línea, sin dependencias externas): `python -m agentcad.server` (o `agentcad-mcp`) desde la raíz del proyecto.
    Para registrarlo en un cliente MCP (por ejemplo Claude Code): `claude mcp add agentcad -- python -m agentcad.server` con el directorio de trabajo en tu proyecto.
@@ -141,7 +152,8 @@ agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ning
    así que cualquier orquestador capaz de lanzar un comando (Snakemake, Airflow, Make, CI, un script) puede ejecutar un bloque o un pipeline como un paso más.
 3. **API de Python**: las funciones de `agentcad.describe`, `interference`, `printability`, `structure`, `lightening`, `spec`, `registro` y `pipeline.ejecutar_bloque` devuelven diccionarios JSON-serializables.
 
-Adaptadores finos para ejecutar un pipeline/bloque como regla de Snakemake, nodo de LangGraph o tarea de Airflow **no están hechos todavía**: están en la hoja de ruta (abajo).
+4. **Adaptadores finos** en [`integraciones/`](integraciones/README.md) para ejecutar un bloque o pipeline como regla de **Snakemake**, nodo de **LangGraph** o tarea de **Airflow**. **No están probados con la librería real**
+   (no están instaladas aquí): solo con dobles que verifican la lógica del adaptador (entradas, JSON de salida, fallo por puerta en rojo, reanudación).
 
 ## Qué esperar (honestidad digital / físico)
 
@@ -163,11 +175,9 @@ No hace falta pytest ni coverage. Las pruebas trabajan sobre el ejemplo o sobre 
 
 ## Hoja de ruta
 
-- Caché por hash de entradas para no repetir bloques deterministas; conexiones y unidades tipadas (mm, g, MPa) entre salidas y entradas, comprobadas en el dry-run; procedencia
-  (qué versión de spec, STL y solver produjo cada resultado).
 - Corregir los defectos 1 a 4 de `LIMITACIONES.md` (pared mínima como volumen de material fino, voladizos en la cama, soportes declarados, aviso de paso grueso por defecto).
 - Suite de verificación del solver FEM contra soluciones analíticas y de referencia (viga, tracción, placa con agujero, flexión en tres puntos, torsión, convergencia de malla) con tolerancias medidas.
-- Adaptadores finos de ejemplo para Snakemake, LangGraph y Airflow, y un caso de éxito documentado.
+- Probar los adaptadores de `integraciones/` con Snakemake, LangGraph y Airflow reales; un caso de éxito documentado.
 
 ## Licencia
 

@@ -155,6 +155,25 @@ agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ning
 4. **Adaptadores finos** en [`integraciones/`](integraciones/README.md) para ejecutar un bloque o pipeline como regla de **Snakemake**, nodo de **LangGraph** o tarea de **Airflow**. **No están probados con la librería real**
    (no están instaladas aquí): solo con dobles que verifican la lógica del adaptador (entradas, JSON de salida, fallo por puerta en rojo, reanudación).
 
+## Verificación numérica del solver
+
+El FEM voxel se **verificó numéricamente contra soluciones analíticas** (no hay validación física con ensayos). Suite en [`validacion/`](validacion/README.md), tablas completas en [`validacion/TABLAS.md`](validacion/TABLAS.md):
+
+| caso (referencia) | n = 2 | n = 4 | n = 8 | n = 12 |
+|---|---|---|---|---|
+| voladizo (Timoshenko) | -17,2 % | -6,3 % | -2,8 % | -2,1 % |
+| flexión en tres puntos, flecha (Timoshenko) | -16,6 % | -5,0 % | -1,5 % | -0,7 % |
+| torsión (Saint-Venant) | -15,7 % | -5,0 % | -1,3 % | -0,6 % |
+| barra a tracción, ideal / empotrada | 0 / -1,8 % | 0 / -1,2 % | | |
+| placa con agujero, Kt (Peterson; n por diámetro) | | -32,5 % | -21,9 % | -10,0 % (n=16: -6,0 %) |
+| placa apoyada, a/h = 10 (Kirchhoff; n = 2 y 4) | -7,7 % | +6,0 % | | |
+
+![convergencia](validacion/figuras/convergencia.png)
+
+Negativo = el FEM es más rígido que la teoría (o subestima el pico): lado inseguro. El orden observado de la flecha es ~1,6 a 1,8 (hexaedro lineal, bloqueo por cortante); el pico de tensión en el agujero no entra en régimen
+asintótico hasta n > 16. **Resolución mínima recomendada** (n elementos por canto menor, error medido <= 5 %): vigas a flexión 6, torsión 4, tracción 1; placas a flexión 2 (<= 10 %; 5 % no alcanzado); pico de tensión en agujeros 16 por
+diámetro (<= 10 %). `evaluate_structure` usa esa tabla: devuelve `fidelity.error_medido` y avisa si el error medido a la resolución elegida supera el 5 %. Es el error de estas geometrías, no una garantía para otras piezas.
+
 ## Qué esperar (honestidad digital / físico)
 
 - Todo resultado lleva `nivel_validacion: "digital"` y una lista de `limites`. Lo que se mide por código y lo que habría que medir en el banco se mantienen separados en cada salida.
@@ -165,7 +184,7 @@ agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ning
 ## Pruebas
 
 ```bash
-python -m unittest discover -s tests -t .                     # suite completa (515 pruebas, ~1-2 min)
+python -m unittest discover -s tests -t .                     # suite completa (535 pruebas, ~1-2 min)
 AGENTCAD_RAPIDAS=1 python -m unittest discover -s tests -t .  # sin las pesadas (FEM, voxelización fina, procesos con límites, aligerado)
 python -m agentcad.bdd_runner tests/features/pipelines --pasos tests/features/pipelines/pasos_pipeline.py   # escenarios Gherkin en español
 python -m agentcad.cobertura --excluir 'tests/*' -- discover -s tests -t .      # cobertura de líneas con sys.monitoring (sin dependencias)
@@ -175,7 +194,7 @@ No hace falta pytest ni coverage. Las pruebas trabajan sobre el ejemplo o sobre 
 
 ## Hoja de ruta
 
-- Suite de verificación del solver FEM contra soluciones analíticas y de referencia (viga, tracción, placa con agujero, flexión en tres puntos, torsión, convergencia de malla) con tolerancias medidas.
+- Verificación cruzada opcional con CalculiX (propuesta con coste/beneficio en `validacion/README.md`).
 - Probar los adaptadores de `integraciones/` con Snakemake, LangGraph y Airflow reales; un caso de éxito documentado.
 
 ## Licencia

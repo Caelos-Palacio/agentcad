@@ -1,0 +1,413 @@
+{
+ "voladizo": {
+  "puntos": [
+   {
+    "n": 2,
+    "paso_mm": 2.5,
+    "elementos": 64,
+    "fem": 1.80810687293931,
+    "referencia": 2.18368,
+    "referencia_eb": 2.1557894736842105,
+    "error_rel": -0.17199091765308558
+   },
+   {
+    "n": 3,
+    "paso_mm": 1.6666666666666667,
+    "elementos": 216,
+    "fem": 1.975714105129264,
+    "referencia": 2.18368,
+    "referencia_eb": 2.1557894736842105,
+    "error_rel": -0.09523643339259229
+   },
+   {
+    "n": 4,
+    "paso_mm": 1.25,
+    "elementos": 512,
+    "fem": 2.0454532892086608,
+    "referencia": 2.18368,
+    "referencia_eb": 2.1557894736842105,
+    "error_rel": -0.06329989320382981
+   },
+   {
+    "n": 6,
+    "paso_mm": 0.8333333333333334,
+    "elementos": 1728,
+    "fem": 2.1009051386635536,
+    "referencia": 2.18368,
+    "referencia_eb": 2.1557894736842105,
+    "error_rel": -0.037906131546951154
+   },
+   {
+    "n": 8,
+    "paso_mm": 0.625,
+    "elementos": 4096,
+    "fem": 2.122090116246955,
+    "referencia": 2.18368,
+    "referencia_eb": 2.1557894736842105,
+    "error_rel": -0.028204628770261506
+   },
+   {
+    "n": 12,
+    "paso_mm": 0.4166666666666667,
+    "elementos": 13824,
+    "fem": 2.1383029553450013,
+    "referencia": 2.18368,
+    "referencia_eb": 2.1557894736842105,
+    "error_rel": -0.020780079798779397
+   }
+  ],
+  "orden": [
+   {
+    "ns": [
+     2,
+     4,
+     8
+    ],
+    "orden_richardson": 1.6308845303150765,
+    "extrapolado": 2.1586355600291145,
+    "error_extrapolado_rel": -0.01146891484598721,
+    "orden_vs_referencia": 1.442057411621926
+   },
+   {
+    "ns": [
+     3,
+     6,
+     12
+    ],
+    "orden_richardson": 1.7431052850449562,
+    "extrapolado": 2.154233533385939,
+    "error_extrapolado_rel": -0.013484790177160028,
+    "orden_vs_referencia": 1.3290823606898645
+   }
+  ]
+ },
+ "placa_agujero": {
+  "puntos": [
+   {
+    "n": 4,
+    "paso_mm": 1.0,
+    "elementos": 297,
+    "fem": 2.1145617822032943,
+    "referencia": 3.1330799999999996,
+    "referencia_infinita": 3.0,
+    "error_rel": -0.32508528917126456
+   },
+   {
+    "n": 6,
+    "paso_mm": 0.6666666666666666,
+    "elementos": 1334,
+    "fem": 2.192785021200873,
+    "referencia": 3.1330799999999996,
+    "referencia_infinita": 3.0,
+    "error_rel": -0.30011840706242005
+   },
+   {
+    "n": 8,
+    "paso_mm": 0.5,
+    "elementos": 2374,
+    "fem": 2.447904872867136,
+    "referencia": 3.1330799999999996,
+    "referencia_infinita": 3.0,
+    "error_rel": -0.21869059428194093
+   },
+   {
+    "n": 12,
+    "paso_mm": 0.3333333333333333,
+    "elementos": 8016,
+    "fem": 2.8188201744960155,
+    "referencia": 3.1330799999999996,
+    "referencia_infinita": 3.0,
+    "error_rel": -0.10030379865946103
+   },
+   {
+    "n": 16,
+    "paso_mm": 0.25,
+    "elementos": 18992,
+    "fem": 2.944268516682144,
+    "referencia": 3.1330799999999996,
+    "referencia_infinita": 3.0,
+    "error_rel": -0.060263856434516774
+   }
+  ],
+  "orden": []
+ },
+ "flexion_3_puntos": {
+  "puntos": [
+   {
+    "n": 2,
+    "paso_mm": 3.0,
+    "elementos": 32,
+    "fem": 0.1970787080164672,
+    "referencia": 0.23618245614035088,
+    "error_rel": -0.16556584584185358,
+    "tension_fem": 2.52877072663075,
+    "tension_referencia": 2.986111111111111,
+    "error_tension_rel": -0.15315584968644652
+   },
+   {
+    "n": 3,
+    "paso_mm": 2.0,
+    "elementos": 108,
+    "fem": 0.2164000272930388,
+    "referencia": 0.23618245614035088,
+    "error_rel": -0.0837590952799492,
+    "tension_fem": 3.803736104397771,
+    "tension_referencia": 4.135802469135803,
+    "error_tension_rel": -0.08029067326501667
+   },
+   {
+    "n": 4,
+    "paso_mm": 1.5,
+    "elementos": 256,
+    "fem": 0.22433745726192292,
+    "referencia": 0.23618245614035088,
+    "error_rel": -0.05015189981506967,
+    "tension_fem": 4.491457405343549,
+    "tension_referencia": 4.739583333333333,
+    "error_tension_rel": -0.052351844147295004
+   },
+   {
+    "n": 6,
+    "paso_mm": 1.0,
+    "elementos": 864,
+    "fem": 0.22987560888264105,
+    "referencia": 0.23618245614035088,
+    "error_rel": -0.026703284235311705,
+    "tension_fem": 5.123342969837437,
+    "tension_referencia": 5.254629629629629,
+    "error_tension_rel": -0.024984950233580112
+   },
+   {
+    "n": 8,
+    "paso_mm": 0.75,
+    "elementos": 2048,
+    "fem": 0.23275102507864023,
+    "referencia": 0.23618245614035088,
+    "error_rel": -0.014528729685457794,
+    "tension_fem": 5.494818954679641,
+    "tension_referencia": 5.596354166666667,
+    "error_tension_rel": -0.018143099768738066
+   },
+   {
+    "n": 12,
+    "paso_mm": 0.5,
+    "elementos": 6912,
+    "fem": 0.2344297887753812,
+    "referencia": 0.23618245614035088,
+    "error_rel": -0.007420819452940909,
+    "tension_fem": 5.784575162510514,
+    "tension_referencia": 5.821116255144032,
+    "error_tension_rel": -0.0062773342829611995
+   }
+  ],
+  "orden": [
+   {
+    "ns": [
+     2,
+     4,
+     8
+    ],
+    "orden_richardson": 1.695929748697946,
+    "extrapolado": 0.23650732340212316,
+    "error_extrapolado_rel": 0.0013754927740239325,
+    "orden_vs_referencia": 1.7230288355999062
+   },
+   {
+    "ns": [
+     3,
+     6,
+     12
+    ],
+    "orden_richardson": 1.5650843542716566,
+    "extrapolado": 0.23675459772359095,
+    "error_extrapolado_rel": 0.002422455895284922,
+    "orden_vs_referencia": 1.6492286693471847
+   }
+  ]
+ },
+ "torsion": {
+  "puntos": [
+   {
+    "n": 2,
+    "paso_mm": 3.0,
+    "elementos": 48,
+    "fem": 0.0006725221126507161,
+    "referencia": 0.0007973264328863959,
+    "error_rel": -0.15652851214762387,
+    "J_mm4": 182.18781154522958
+   },
+   {
+    "n": 3,
+    "paso_mm": 2.0,
+    "elementos": 162,
+    "fem": 0.0007316367967301665,
+    "referencia": 0.0007973264328863959,
+    "error_rel": -0.08238738043391693,
+    "J_mm4": 182.18781154522958
+   },
+   {
+    "n": 4,
+    "paso_mm": 1.5,
+    "elementos": 384,
+    "fem": 0.0007577629610887668,
+    "referencia": 0.0007973264328863959,
+    "error_rel": -0.04962016830974194,
+    "J_mm4": 182.18781154522958
+   },
+   {
+    "n": 6,
+    "paso_mm": 1.0,
+    "elementos": 1296,
+    "fem": 0.000778775803185565,
+    "referencia": 0.0007973264328863959,
+    "error_rel": -0.023266041279574604,
+    "J_mm4": 182.18781154522958
+   },
+   {
+    "n": 8,
+    "paso_mm": 0.75,
+    "elementos": 3072,
+    "fem": 0.0007866774187086373,
+    "referencia": 0.0007973264328863959,
+    "error_rel": -0.013355902599651949,
+    "J_mm4": 182.18781154522958
+   },
+   {
+    "n": 12,
+    "paso_mm": 0.5,
+    "elementos": 10368,
+    "fem": 0.0007925197756275981,
+    "referencia": 0.0007973264328863959,
+    "error_rel": -0.006028468467296751,
+    "J_mm4": 182.18781154522958
+   }
+  ],
+  "orden": [
+   {
+    "ns": [
+     2,
+     4,
+     8
+    ],
+    "orden_richardson": 1.5597539127779427,
+    "extrapolado": 0.000801520298703381,
+    "error_extrapolado_rel": 0.005259910676487887,
+    "orden_vs_referencia": 1.6574269384942117
+   },
+   {
+    "ns": [
+     3,
+     6,
+     12
+    ],
+    "orden_richardson": 1.7781223025031785,
+    "extrapolado": 0.0007981762088090035,
+    "error_extrapolado_rel": 0.0010657817018950295,
+    "orden_vs_referencia": 1.8241976147892456
+   }
+  ]
+ },
+ "placa_apoyada": {
+  "puntos": [
+   {
+    "n": 2,
+    "paso_mm": 2.5,
+    "elementos": 800,
+    "fem": 0.010122702959852334,
+    "referencia": 0.010969692631578948,
+    "error_rel": -0.07721179618910629
+   },
+   {
+    "n": 4,
+    "paso_mm": 1.25,
+    "elementos": 6400,
+    "fem": 0.0116263633008695,
+    "referencia": 0.010969692631578948,
+    "error_rel": 0.059862267006476025
+   }
+  ],
+  "orden": []
+ },
+ "traccion_ideal": {
+  "puntos": [
+   {
+    "n": 1,
+    "paso_mm": 5.0,
+    "elementos": 6,
+    "fem": 0.06315789473684233,
+    "referencia": 0.06315789473684211,
+    "error_rel": 3.5157062446463288e-15,
+    "tension_media": 4.000000000000019,
+    "tension_max": 4.000000000000021,
+    "tension_referencia": 4.0,
+    "error_tension_rel": 5.329070518200751e-15
+   },
+   {
+    "n": 2,
+    "paso_mm": 2.5,
+    "elementos": 48,
+    "fem": 0.06315789473684269,
+    "referencia": 0.06315789473684211,
+    "error_rel": 9.228728892196614e-15,
+    "tension_media": 4.000000000000045,
+    "tension_max": 4.000000000000051,
+    "tension_referencia": 4.0,
+    "error_tension_rel": 1.2656542480726785e-14
+   },
+   {
+    "n": 4,
+    "paso_mm": 1.25,
+    "elementos": 384,
+    "fem": 0.06315789473684416,
+    "referencia": 0.06315789473684211,
+    "error_rel": 3.252028276297854e-14,
+    "tension_media": 4.0000000000001465,
+    "tension_max": 4.0000000000002025,
+    "tension_referencia": 4.0,
+    "error_tension_rel": 5.062616992290714e-14
+   }
+  ],
+  "orden": []
+ },
+ "traccion_empotrada": {
+  "puntos": [
+   {
+    "n": 1,
+    "paso_mm": 5.0,
+    "elementos": 6,
+    "fem": 0.06110838038840265,
+    "referencia": 0.06315789473684211,
+    "error_rel": -0.03245064385029145,
+    "tension_media": 4.000000000000011,
+    "tension_max": 4.0000000000000115,
+    "tension_referencia": 4.0,
+    "error_tension_rel": 2.886579864025407e-15
+   },
+   {
+    "n": 2,
+    "paso_mm": 2.5,
+    "elementos": 48,
+    "fem": 0.06200363773195629,
+    "referencia": 0.06315789473684211,
+    "error_rel": -0.018275735910692145,
+    "tension_media": 4.00000000000003,
+    "tension_max": 4.000000000000071,
+    "tension_referencia": 4.0,
+    "error_tension_rel": 1.7763568394002505e-14
+   },
+   {
+    "n": 4,
+    "paso_mm": 1.25,
+    "elementos": 384,
+    "fem": 0.0623842672146516,
+    "referencia": 0.06315789473684211,
+    "error_rel": -0.012249102434682996,
+    "tension_media": 4.000000000000163,
+    "tension_max": 4.000001925240915,
+    "tension_referencia": 4.0,
+    "error_tension_rel": 4.813102287837268e-07
+   }
+  ],
+  "orden": []
+ }
+}

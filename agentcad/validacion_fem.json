@@ -1,0 +1,138 @@
+{
+ "etiqueta": "verificado numéricamente contra solución analítica; NO validado físicamente con ensayos",
+ "material": {
+  "E_MPa": 1900.0,
+  "nu": 0.38
+ },
+ "tipos": {
+  "viga_flexion": {
+   "descripcion": "barras/vigas a flexión (voladizo, tres puntos)",
+   "unidad_n": "elementos por canto en la dirección de la flexión",
+   "curva": [
+    {
+     "n": 2,
+     "error_rel": -0.17199091765308558
+    },
+    {
+     "n": 3,
+     "error_rel": -0.09523643339259229
+    },
+    {
+     "n": 4,
+     "error_rel": -0.06329989320382981
+    },
+    {
+     "n": 6,
+     "error_rel": -0.037906131546951154
+    },
+    {
+     "n": 8,
+     "error_rel": -0.028204628770261506
+    },
+    {
+     "n": 12,
+     "error_rel": -0.020780079798779397
+    }
+   ],
+   "n_para_5pct": 6,
+   "n_para_10pct": 3
+  },
+  "traccion": {
+   "descripcion": "barras a tracción",
+   "unidad_n": "elementos por canto",
+   "curva": [
+    {
+     "n": 1,
+     "error_rel": -0.03245064385029145
+    },
+    {
+     "n": 2,
+     "error_rel": -0.018275735910692145
+    },
+    {
+     "n": 4,
+     "error_rel": -0.012249102434682996
+    }
+   ],
+   "n_para_5pct": 1,
+   "n_para_10pct": 1
+  },
+  "torsion": {
+   "descripcion": "barras a torsión de sección maciza",
+   "unidad_n": "elementos por canto menor",
+   "curva": [
+    {
+     "n": 2,
+     "error_rel": -0.15652851214762387
+    },
+    {
+     "n": 3,
+     "error_rel": -0.08238738043391693
+    },
+    {
+     "n": 4,
+     "error_rel": -0.04962016830974194
+    },
+    {
+     "n": 6,
+     "error_rel": -0.023266041279574604
+    },
+    {
+     "n": 8,
+     "error_rel": -0.013355902599651949
+    },
+    {
+     "n": 12,
+     "error_rel": -0.006028468467296751
+    }
+   ],
+   "n_para_5pct": 4,
+   "n_para_10pct": 3
+  },
+  "placa_flexion": {
+   "descripcion": "placas delgadas a flexión (a/h = 10)",
+   "unidad_n": "elementos en el espesor",
+   "curva": [
+    {
+     "n": 2,
+     "error_rel": -0.07721179618910629
+    },
+    {
+     "n": 4,
+     "error_rel": 0.059862267006476025
+    }
+   ],
+   "n_para_5pct": null,
+   "n_para_10pct": 2
+  },
+  "placa_agujero": {
+   "descripcion": "concentración de tensiones en un agujero (pico de tensión)",
+   "unidad_n": "elementos por diámetro del agujero",
+   "curva": [
+    {
+     "n": 4,
+     "error_rel": -0.32508528917126456
+    },
+    {
+     "n": 6,
+     "error_rel": -0.30011840706242005
+    },
+    {
+     "n": 8,
+     "error_rel": -0.21869059428194093
+    },
+    {
+     "n": 12,
+     "error_rel": -0.10030379865946103
+    },
+    {
+     "n": 16,
+     "error_rel": -0.060263856434516774
+    }
+   ],
+   "n_para_5pct": null,
+   "n_para_10pct": 16
+  }
+ },
+ "nota": "error = (FEM - referencia)/referencia; negativo = el FEM es más rígido o subestima el pico (lado inseguro)"
+}

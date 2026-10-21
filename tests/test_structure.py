@@ -64,20 +64,47 @@ class PlacaDeclarada(unittest.TestCase):
 
 @pesada
 class F4PasoRecomendadoPorDefecto(unittest.TestCase):
-    """F4/defecto 4: un modelo registrado por código SIN recomendado_mm también informa y avisa del paso grueso."""
+    """F4/F5: un modelo registrado por código SIN recomendado_mm también informa y avisa del paso grueso (ahora con la resolución verificada)."""
     def setUp(self): st.registrar_modelo('viga_sin_rec', st.modelo_voladizo_x(P=10.0), valid_for=['voladizo'], casos=['punta'])
     def tearDown(self): st.MODELOS.pop('viga_sin_rec', None)
     def test_informa_el_recomendado_y_su_origen(self):
         r = st.evaluate_structure(barra('viga_sin_rec.stl'), fidelity=0.625)
-        self.assertAlmostEqual(r['fidelity']['recomendado_mm'], 1.25, places=3)      # canto menor 5 mm / 4
-        self.assertEqual(r['fidelity']['origen_recomendado'], 'canto_menor/4')
+        self.assertAlmostEqual(r['fidelity']['recomendado_mm'], 5 / 6, places=3)      # canto menor 5 mm / 6 elementos (n para <=5 % verificado)
+        self.assertEqual(r['fidelity']['origen_recomendado'], 'verificacion_fem')
         self.assertFalse(any('recomendado' in a for a in r['advertencias']))
     def test_avisa_con_paso_grueso(self):
         r = st.evaluate_structure(barra('viga_sin_rec.stl'), fidelity=2.5)
-        self.assertTrue(any('recomendado 1.25' in a for a in r['advertencias']), r['advertencias'])
+        self.assertTrue(any('recomendado 0.8333' in a for a in r['advertencias']), r['advertencias'])
     def test_el_modelo_manda_si_declara_recomendado(self):
         st.MODELOS['viga_sin_rec']['recomendado_mm'] = 0.5
         r = st.evaluate_structure(barra('viga_sin_rec.stl'), fidelity=0.625)
         self.assertEqual(r['fidelity']['recomendado_mm'], 0.5); self.assertEqual(r['fidelity']['origen_recomendado'], 'modelo')
         self.assertTrue(any('recomendado 0.5' in a for a in r['advertencias']))
+
+@pesada
+class F5ToleranciaMedida(unittest.TestCase):
+    """F5: evaluate_structure advierte con el error MEDIDO en la suite de verificación (validacion/), no con una cifra fija."""
+    def tearDown(self): st.MODELOS.pop('viga_tol', None)
+    def reg(self, **kw): st.registrar_modelo('viga_tol', st.modelo_voladizo_x(P=10.0), valid_for=['voladizo'], casos=['punta'], **kw)
+    def test_paso_grueso_informa_el_error_medido_y_avisa(self):
+        self.reg(); r = st.evaluate_structure(barra('viga_tol.stl'), fidelity=2.5)
+        em = r['fidelity']['error_medido']
+        self.assertEqual(em['elementos_por_canto'], 2.0); self.assertLess(em['error_rel'], -0.15)      # -17,2 % del voladizo a 2 elementos por canto
+        self.assertIn('verificado numéricamente', em['etiqueta']); self.assertIn('no validado físicamente', em['etiqueta'])
+        self.assertTrue(any('error medido' in a and 'solución analítica' in a for a in r['advertencias']), r['advertencias'])
+    def test_paso_fino_no_avisa_del_error(self):
+        self.reg(); r = st.evaluate_structure(barra('viga_tol.stl'), fidelity=0.3125 * 2)
+        self.assertFalse(any('error medido' in a for a in r['advertencias']), r['advertencias'])
+        self.assertLess(abs(r['fidelity']['error_medido']['error_rel']), 0.05)
+    def test_tipo_declarado_usa_su_curva(self):
+        self.reg(tipo_validacion='traccion'); r = st.evaluate_structure(barra('viga_tol.stl'), fidelity=2.5)
+        self.assertEqual(r['fidelity']['error_medido']['tipo'], 'traccion'); self.assertGreater(r['fidelity']['error_medido']['error_rel'], -0.05)
+    def test_tipo_desconocido_falla(self):
+        with self.assertRaises(ValueError): self.reg(tipo_validacion='inexistente')
+    def test_fuera_de_rango_se_marca(self):
+        self.assertTrue(st.error_medido('viga_flexion', 1.0)['fuera_de_rango'])
+        self.assertTrue(st.error_medido('viga_flexion', 100.0)['fuera_de_rango'])
+        self.assertFalse(st.error_medido('viga_flexion', 4.0)['fuera_de_rango'])
+    def test_sin_tipo_es_la_envolvente_del_peor_caso(self):
+        e = st.error_medido(None, 2.0); self.assertLessEqual(e['error_rel'], st.error_medido('torsion', 2.0)['error_rel'] + 1e-12)
 if __name__ == '__main__': unittest.main()

@@ -1,7 +1,7 @@
 """evaluate_structure: masa, margen mínimo y flecha con el FEM voxel de agentcad (fem3d + fastlu), SOLO para piezas con modelo de carga registrado.
 Una pieza sin modelo de carga devuelve status='no_validado' (nunca una cifra inventada). Los modelos se registran por código (`registrar_modelo`) o se declaran
 en agentcad.toml como [estructura.<pieza>] (modelo genérico `placa_apoyada`: placa sobre apoyos circulares con carga repartida). Digital: no prueba resistencia física."""
-import os
+import json, os
 from pathlib import Path
 import numpy as np
 from . import config, geom, benchmarks
@@ -13,10 +13,38 @@ import scipy.ndimage as ndi
 ADMISIBLE_MPA = 10.0          # admisible por defecto (MPa); configurable por pieza (admisible_MPa). Valor de ejemplo: resistencia entre capas 20 MPa / 2
 MAX_ELEMENTOS = 250_000
 
+ETIQUETA_VERIFICACION = 'verificado numéricamente contra solución analítica (validacion/); no validado físicamente con ensayos (no hay ninguno)'
+_TABLA = {}
+def tabla_validacion():
+    """Tabla de errores medidos de la suite validacion/ (agentcad/validacion_fem.json, la regenera `python -m validacion.ejecutar`)."""
+    if not _TABLA: _TABLA.update(json.loads((Path(__file__).resolve().parent / 'validacion_fem.json').read_text(encoding='utf-8')))
+    return _TABLA
+_TIPOS_CANTO = ('viga_flexion', 'traccion', 'torsion', 'placa_flexion')      # los que se miden en elementos por canto (placa_agujero se mide por diámetro del agujero)
+
+def _err_en(curva, n):
+    """Error de la curva al mayor n probado que no supera n (conservador); por debajo del mínimo probado, el del mínimo. -> (error, n_verificado, fuera_de_rango)."""
+    ns = [x['n'] for x in curva]; ok = [x for x in curva if x['n'] <= n + 1e-9]
+    if not ok: return curva[0]['error_rel'], ns[0], True
+    return ok[-1]['error_rel'], ok[-1]['n'], n > ns[-1] + 1e-9
+
+def error_medido(tipo, n):
+    """Error relativo medido (FEM - analítica)/analítica a n elementos por canto. tipo=None: envolvente del PEOR caso entre los tipos por canto."""
+    t = tabla_validacion()['tipos']
+    if tipo is not None and tipo not in t: raise ValueError(f'tipo_validacion desconocido: {tipo}; disponibles: {sorted(t)}')
+    cand = [tipo] if tipo else [k for k in _TIPOS_CANTO if t[k]['curva'][-1]['n'] >= n - 1e-9] or list(_TIPOS_CANTO)      # envolvente: solo curvas probadas hasta este n
+    res = [(*_err_en(t[k]['curva'], n), k) for k in cand]; e, nv, fuera, k = max(res, key=lambda r: abs(r[0]))
+    return dict(tipo=k if tipo else f'envolvente({k})', elementos_por_canto=float(n), n_verificado=nv, error_rel=e, fuera_de_rango=bool(fuera), etiqueta=ETIQUETA_VERIFICACION)
+
+def n_recomendado(tipo):
+    """Elementos por canto para <= 5 % de error medido (si no se alcanza, para <= 10 %); envolvente = el mayor de los tipos por canto."""
+    t = tabla_validacion()['tipos']; cand = [tipo] if tipo else list(_TIPOS_CANTO)
+    return max((t[k]['n_para_5pct'] or t[k]['n_para_10pct'] or 8) for k in cand)
+
 MODELOS = {}
-def registrar_modelo(modulo, funcion, valid_for, casos, no_valido_para=None, recomendado_mm=None, descripcion=''):
-    """funcion(ruta, paso_mm, caso, modulo) -> dict(margen, flecha_mm, elementos)."""
-    MODELOS[modulo] = dict(funcion=funcion, valid_for=list(valid_for), casos=list(casos), recomendado_mm=recomendado_mm, descripcion=descripcion,
+def registrar_modelo(modulo, funcion, valid_for, casos, no_valido_para=None, recomendado_mm=None, descripcion='', tipo_validacion=None):
+    """funcion(ruta, paso_mm, caso, modulo) -> dict(margen, flecha_mm, elementos). tipo_validacion: curva de error medido que aplica (viga_flexion, traccion, torsion, placa_flexion, placa_agujero); None = peor caso."""
+    if tipo_validacion is not None and tipo_validacion not in tabla_validacion()['tipos']: raise ValueError(f'tipo_validacion desconocido: {tipo_validacion}')
+    MODELOS[modulo] = dict(funcion=funcion, valid_for=list(valid_for), casos=list(casos), recomendado_mm=recomendado_mm, descripcion=descripcion, tipo_validacion=tipo_validacion,
                            no_valido_para=list(no_valido_para or ['fatiga', 'fluencia', 'anisotropía de capas', 'tolerancias de impresión', 'ensayo físico']))
 
 def _resolver_modulo_modelo(r): return r['modulo']
@@ -62,7 +90,7 @@ def _modelo_de_proyecto(modulo):
     if not cfg: return None
     if cfg.get('modelo', 'placa_apoyada') != 'placa_apoyada': raise ErrorHerramienta('modelo_desconocido', f"[estructura.{modulo}] modelo '{cfg.get('modelo')}' no existe; modelos: placa_apoyada")
     adm = cfg.get('admisible_MPa', ADMISIBLE_MPA)
-    return dict(funcion=modelo_placa_apoyada(cfg), casos=list(cfg.get('casos', ['carga'])), recomendado_mm=cfg.get('recomendado_mm'), no_valido_para=list(_NO_PLACA),
+    return dict(funcion=modelo_placa_apoyada(cfg), casos=list(cfg.get('casos', ['carga'])), recomendado_mm=cfg.get('recomendado_mm'), tipo_validacion=cfg.get('tipo_validacion', 'placa_flexion'), no_valido_para=list(_NO_PLACA),
                 descripcion='modelo placa_apoyada declarado en agentcad.toml (FEM voxel)',
                 valid_for=[f"placa apoyada en {len(cfg['apoyos'])} apoyos circulares (r {cfg.get('radio_apoyo_mm', 4.5)} mm) en la cara inferior", f"carga {cfg['carga_N']} N repartida sobre lo que sobresale de la placa",
                            f"E={cfg.get('E_MPa', benchmarks.E_PETG)} MPa, nu={cfg.get('nu', benchmarks.NU_PETG)}; elasticidad lineal isótropa; admisible {adm} MPa",
@@ -93,12 +121,17 @@ def evaluate_structure(part, cases=None, fidelity=None):
     if est > MAX_ELEMENTOS * 3:
         return dict(estado='error', codigo='demasiado_grande', mensaje=f'~{int(est)} elementos a paso {paso}; sube fidelity')
     adv = []
-    cands = [(float(x), o) for x, o in ((mod['recomendado_mm'], 'modelo'), (float(mesh.extents.min()) / 4, 'canto_menor/4')) if x]
+    canto = float(mesh.extents.min()); tipo = mod.get('tipo_validacion')
+    cands = [(float(x), o) for x, o in ((mod['recomendado_mm'], 'modelo'), (canto / n_recomendado(tipo), 'verificacion_fem'), (canto / 4, 'canto_menor/4')) if x]
     rec, origen_rec = min(cands)          # siempre hay recomendado: el del modelo si lo declara, si no un cuarto del canto menor
     if paso > rec + 1e-9: adv.append(f'paso {paso} mm > recomendado {r4(rec)} mm: el FEM no resuelve bien los nervios/espesores finos; el margen puede estar sobreestimado')
+    em = error_medido(tipo, canto / paso)
+    if abs(em['error_rel']) > 0.05:
+        adv.append(f"error medido en la suite de verificación: {em['error_rel'] * 100:+.1f} % frente a la solución analítica con {em['elementos_por_canto']:.1f} elementos por canto (curva {em['tipo']}, n verificado {em['n_verificado']})"
+                   + ('; fuera del rango verificado' if em['fuera_de_rango'] else '') + '; negativo = FEM más rígido: el margen y la flecha pueden estar sobreestimados')
     res = {c: mod['funcion'](r['ruta'], paso, c, r['modulo']) for c in casos}
     margen = min(v['margen'] for v in res.values()); flecha = max(abs(v['flecha_mm']) for v in res.values())
     return dict(base, status='ok', margen_min=r4(margen), flecha_mm=r4(flecha), casos={c: {k: r4(x) for k, x in v.items()} for c, v in res.items()},
                 fidelity=dict(paso_mm=paso, recomendado_mm=r4(rec), origen_recomendado=origen_rec, elementos=max(v['elementos'] for v in res.values()), solver='fem3d hexaedro lineal 2x2x2 + LU (fastlu)',
-                              error_conocido='viga: -17 % (2 el/canto), -6 % (4), -3 % (8) vs Timoshenko; ver agentcad/benchmarks.py y la sección de validación del README'),
+                              error_medido=em, error_conocido='ver validacion/TABLAS.md: errores medidos por tipo de pieza y resolución (verificado numéricamente, no validado físicamente)'),
                 valid_for=mod['valid_for'], no_valido_para=mod['no_valido_para'], advertencias=adv, modelo=mod['descripcion'])

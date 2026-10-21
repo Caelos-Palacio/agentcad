@@ -2,6 +2,10 @@
 
 ## Sin publicar
 
+F5: suite de verificación del solver (`validacion/`, TDD): voladizo, tracción, placa con agujero (Kt de Peterson), flexión en tres puntos, torsión de Saint-Venant y placa apoyada, con convergencia de malla
+(orden observado, extrapolación de Richardson), tablas, gráficas y resolución mínima recomendada por tipo de pieza. `evaluate_structure` lee `agentcad/validacion_fem.json` y devuelve `fidelity.error_medido`;
+avisa con el error medido (antes solo una cifra fija de la viga); `tipo_validacion` en el modelo; el paso recomendado por defecto pasa de «canto/4» a «canto/n» con n verificado. Etiqueta: verificado numéricamente, no validado físicamente.
+
 F4: defectos del núcleo (con pruebas, TDD). Antes -> después:
 - **Pared mínima como volumen de material fino.** Antes: un único mínimo global (`pared_min_mm`) que no distinguía una aleta de 3x3 mm de una pared de 40x40 mm. Después: `material_fino` (`volumen_mm3`, `fraccion`, `severidad`
   ninguna/puntual/localizada/extensa) y los mismos campos en el criterio `pared_min_mm`; una aleta de 0,8x15x10 mm sobre un bloque mide ~120 mm3 y severidad `localizada`; una pared de 0,8x40x40 mm, `extensa`.

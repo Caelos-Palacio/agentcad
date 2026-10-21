@@ -2,6 +2,16 @@
 
 ## Sin publicar
 
+F4: defectos del núcleo (con pruebas, TDD). Antes -> después:
+- **Pared mínima como volumen de material fino.** Antes: un único mínimo global (`pared_min_mm`) que no distinguía una aleta de 3x3 mm de una pared de 40x40 mm. Después: `material_fino` (`volumen_mm3`, `fraccion`, `severidad`
+  ninguna/puntual/localizada/extensa) y los mismos campos en el criterio `pared_min_mm`; una aleta de 0,8x15x10 mm sobre un bloque mide ~120 mm3 y severidad `localizada`; una pared de 0,8x40x40 mm, `extensa`.
+  Además, un valor a menos de ±tolerancia del umbral (`en_banda_tolerancia`) ya no se declara «cumple»: el veredicto es `indeterminado` (antes una pared de 1,17 mm pasaba frente a 1,2 mm).
+- **Voladizos en la cama.** Antes: una cara casi horizontal (p. ej. 0,5 grados) apoyada en la cama contaba como voladizo y escalonaba la huella como isla/puente (luz de 11,5 mm falsa). Después: las caras enteras y las capas
+  dentro de la primera altura de capa (`layer`, 0,2 mm) no cuentan; una cara a 5 grados sigue siendo voladizo.
+- **Islas y puentes con soportes declarados.** Antes: con `support != "no"` se daban por buenos sin comprobar nada. Después: `support_regiones` (cajas en el marco de la pieza) en `[impresion.<pieza>]`:
+  se exige solo lo que queda fuera de las zonas; salida `soporte` (`regiones`, `cobertura_verificada`), `islas.cubiertas`, `puente.luz_sin_soporte_mm`. Sin zonas el comportamiento informativo se mantiene, ahora con nota explícita.
+- **Aviso de paso grueso por defecto.** Antes: solo si el modelo declaraba `recomendado_mm` o por la regla del canto, sin decir cuál. Después: `fidelity.recomendado_mm` y `fidelity.origen_recomendado` (`modelo` o `canto_menor/4`) en toda evaluación.
+
 F3 (con pruebas, TDD):
 - **Caché por hash de entradas** para bloques deterministas (`determinista=True`; `agentcad/cache.py`); `puerta_pared_min`, `puerta_imprimibilidad`, `puerta_interferencia` y `puerta_margen_fem` la usan. Marca `C` en el catálogo.
 - **Unidades tipadas** (`agentcad/unidades.py`) en esquemas de bloques y parámetros de pipelines, con comprobación de compatibilidad en el dry-run; los bloques de agentcad declaran mm, mm3, g y adimensional.

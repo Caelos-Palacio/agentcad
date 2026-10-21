@@ -61,4 +61,23 @@ class PlacaDeclarada(unittest.TestCase):
         self.assertEqual(r['nivel_validacion'], 'digital')
         self.assertIn('carga', r['casos'])
         self.assertTrue(any('paso' in a for a in r['advertencias']))      # 2 mm no resuelve el paso recomendado de 0,8 mm
+
+@pesada
+class F4PasoRecomendadoPorDefecto(unittest.TestCase):
+    """F4/defecto 4: un modelo registrado por código SIN recomendado_mm también informa y avisa del paso grueso."""
+    def setUp(self): st.registrar_modelo('viga_sin_rec', st.modelo_voladizo_x(P=10.0), valid_for=['voladizo'], casos=['punta'])
+    def tearDown(self): st.MODELOS.pop('viga_sin_rec', None)
+    def test_informa_el_recomendado_y_su_origen(self):
+        r = st.evaluate_structure(barra('viga_sin_rec.stl'), fidelity=0.625)
+        self.assertAlmostEqual(r['fidelity']['recomendado_mm'], 1.25, places=3)      # canto menor 5 mm / 4
+        self.assertEqual(r['fidelity']['origen_recomendado'], 'canto_menor/4')
+        self.assertFalse(any('recomendado' in a for a in r['advertencias']))
+    def test_avisa_con_paso_grueso(self):
+        r = st.evaluate_structure(barra('viga_sin_rec.stl'), fidelity=2.5)
+        self.assertTrue(any('recomendado 1.25' in a for a in r['advertencias']), r['advertencias'])
+    def test_el_modelo_manda_si_declara_recomendado(self):
+        st.MODELOS['viga_sin_rec']['recomendado_mm'] = 0.5
+        r = st.evaluate_structure(barra('viga_sin_rec.stl'), fidelity=0.625)
+        self.assertEqual(r['fidelity']['recomendado_mm'], 0.5); self.assertEqual(r['fidelity']['origen_recomendado'], 'modelo')
+        self.assertTrue(any('recomendado 0.5' in a for a in r['advertencias']))
 if __name__ == '__main__': unittest.main()

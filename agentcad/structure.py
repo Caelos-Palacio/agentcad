@@ -93,11 +93,12 @@ def evaluate_structure(part, cases=None, fidelity=None):
     if est > MAX_ELEMENTOS * 3:
         return dict(estado='error', codigo='demasiado_grande', mensaje=f'~{int(est)} elementos a paso {paso}; sube fidelity')
     adv = []
-    rec = min([x for x in (mod['recomendado_mm'], float(mesh.extents.min()) / 4) if x])
+    cands = [(float(x), o) for x, o in ((mod['recomendado_mm'], 'modelo'), (float(mesh.extents.min()) / 4, 'canto_menor/4')) if x]
+    rec, origen_rec = min(cands)          # siempre hay recomendado: el del modelo si lo declara, si no un cuarto del canto menor
     if paso > rec + 1e-9: adv.append(f'paso {paso} mm > recomendado {r4(rec)} mm: el FEM no resuelve bien los nervios/espesores finos; el margen puede estar sobreestimado')
     res = {c: mod['funcion'](r['ruta'], paso, c, r['modulo']) for c in casos}
     margen = min(v['margen'] for v in res.values()); flecha = max(abs(v['flecha_mm']) for v in res.values())
     return dict(base, status='ok', margen_min=r4(margen), flecha_mm=r4(flecha), casos={c: {k: r4(x) for k, x in v.items()} for c, v in res.items()},
-                fidelity=dict(paso_mm=paso, elementos=max(v['elementos'] for v in res.values()), solver='fem3d hexaedro lineal 2x2x2 + LU (fastlu)',
+                fidelity=dict(paso_mm=paso, recomendado_mm=r4(rec), origen_recomendado=origen_rec, elementos=max(v['elementos'] for v in res.values()), solver='fem3d hexaedro lineal 2x2x2 + LU (fastlu)',
                               error_conocido='viga: -17 % (2 el/canto), -6 % (4), -3 % (8) vs Timoshenko; ver agentcad/benchmarks.py y la sección de validación del README'),
                 valid_for=mod['valid_for'], no_valido_para=mod['no_valido_para'], advertencias=adv, modelo=mod['descripcion'])

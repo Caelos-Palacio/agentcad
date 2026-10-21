@@ -54,8 +54,8 @@ def perfil(modulo, override=None):
     p = pr.perfil_impresion(modulo)
     if p:
         out = dict(origen='agentcad.toml', walls=p.get('walls', defecto['walls']), infill=p.get('infill', defecto['infill']))
-        for k in ('rot', 'support', 'layer'):
-            if k in p: out[k] = list(p[k]) if k == 'rot' else p[k]
+        for k in ('rot', 'support', 'layer', 'support_regiones'):
+            if k in p: out[k] = list(p[k]) if k in ('rot', 'support_regiones') else p[k]
         return out
     return dict(origen='por_defecto', walls=defecto['walls'], infill=defecto['infill'])
 

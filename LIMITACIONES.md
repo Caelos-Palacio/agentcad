@@ -15,13 +15,15 @@ Esta es la lista honesta, a fecha de la versión 0.1.0. Nada de lo que produce a
 
 ## Defectos conocidos del núcleo
 
-1. **`pared_min_mm` no discrimina.** Es un único mínimo global sobre el espesor local: no distingue una pared fina puntual de un volumen grande de material fino. Los umbrales
-   se evalúan con la tolerancia de medida (±paso/4 en el plano), así que una pared de 1,15 mm puede aparecer como «cumple» frente a un umbral de 1,2 mm.
-2. **Voladizos cerca de la cama.** Las facetas casi horizontales apoyadas o muy próximas a la cama cuentan como voladizo (se excluyen solo las caras enteras sobre la cama, `z <= 0,05 mm`).
-3. **Islas y puentes con soportes declarados.** Si el perfil de impresión declara soportes (`support != "no"`), islas, puentes y voladizos pasan a ser informativos: el valor se mide y se informa,
-   pero no se comprueba que el soporte declarado cubra la zona concreta.
-4. **El aviso de paso grueso depende del modelo.** `evaluate_structure` solo avisa de que el paso de malla es mayor que el recomendado si el modelo declara `recomendado_mm`
-   (o por la regla de un cuarto del canto menor). Un modelo registrado por código sin `recomendado_mm` no avisa por resolución del solver.
+Resueltos en 0.2.0 (ver `CHANGELOG.md`): pared mínima como volumen de material fino con severidad, voladizos/islas/puentes en la primera capa, soportes declarados con zona y aviso de paso grueso por defecto.
+Matices que quedan de esas correcciones:
+
+1. **Material fino aproximado.** `material_fino.volumen_mm3` es espesor x cresta x capa (plano) más las losas finas (vertical): una estimación (±~30 %), no un volumen exacto, y la severidad
+   (<0,5 % puntual, <5 % localizada, >=5 % extensa) es una convención de agentcad, no una norma. Un valor dentro de ±tolerancia del umbral (`en_banda_tolerancia`) da veredicto `indeterminado`.
+2. **Zonas de soporte son cajas que declaras tú** (`support_regiones`, marco de la pieza; si la orientación gira la pieza se usa la envolvente de la caja). agentcad comprueba que lo medido caiga dentro,
+   no que el slicer vaya a rellenar esa caja. Sin `support_regiones`, un perfil con `support != "no"` sigue siendo informativo (islas, puentes y voladizos se miden pero no se exigen).
+3. **Primera capa.** Las caras enteras y las huellas dentro de la primera altura de capa (`layer`, 0,2 mm por defecto) no cuentan como voladizo/isla/puente: un objeto flotando a menos de esa altura no se detecta.
+4. **El paso recomendado por defecto es heurístico** (un cuarto del canto menor) hasta que el modelo declare `recomendado_mm`.
 5. **Cilindros solo con eje paralelo a x, y o z** (`describe_part`).
 6. **Poses discretas** en `check_interference`: sin volumen barrido ni tolerancias de montaje; envolventes de hardware nominales.
 7. **`apply_hex_lightening` solo aligera placas planas** con la cara inferior en z=0; no hay aligerado de piezas cilíndricas ni de formas libres.
@@ -40,5 +42,4 @@ Esta es la lista honesta, a fecha de la versión 0.1.0. Nada de lo que produce a
 
 - Un único formato de ensamblaje (`assembly.json` descrito en el README) y un único formato de geometría de entrada (STL cerrado). OpenSCAD es opcional: el ejemplo no lo necesita.
 - Idioma: mensajes, esquemas y documentación en español.
-- Pendiente (ver hoja de ruta en el README): caché por hash de entradas, unidades tipadas entre bloques, procedencia (qué versión de spec/STL/solver produjo cada resultado),
-  correcciones de los defectos 1 a 4, suite de verificación del solver y adaptadores de integración con otros orquestadores.
+- Pendiente (ver hoja de ruta en el README): probar los adaptadores de `integraciones/` con las librerías reales (hoy solo con dobles) y la suite de verificación del solver (F5).

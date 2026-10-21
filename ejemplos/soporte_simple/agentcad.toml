@@ -66,3 +66,16 @@ casos = ["carga"]
 
 [impresion.pieza_soporte_demo]   # solo para las pruebas: pieza con soportes declarados
 support = "mínimo, solo bajo el puente"
+
+# Soportes con ZONA declarada (cajas [xmin, ymin, zmin, xmax, ymax, zmax] en el marco de la pieza, mm): printability solo da por cubierto lo que cae dentro.
+[impresion.pieza_soporte_zona]   # solo para las pruebas: el soporte cubre toda la luz bajo la mesa
+support = "mínimo, solo bajo el puente"
+support_regiones = [[3.0, 0.0, 0.0, 27.0, 20.0, 10.5]]
+
+[impresion.pieza_soporte_parcial]   # solo para las pruebas: el soporte cubre solo un tramo de la luz
+support = "mínimo, solo bajo el puente"
+support_regiones = [[3.0, 0.0, 0.0, 10.0, 20.0, 10.5]]
+
+[impresion.pieza_soporte_isla]   # solo para las pruebas: el soporte cubre el diente que arranca en el aire
+support = "mínimo, bajo el diente"
+support_regiones = [[9.0, 9.0, 5.5, 15.0, 15.0, 6.8]]

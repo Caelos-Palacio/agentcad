@@ -74,7 +74,7 @@ structure.evaluate_structure('placa_soporte', fidelity=0.8)        # margen seg�
 
 agentcad no conoce tu diseño: lo describes en un archivo `agentcad.toml` en la raíz de tu proyecto (o `AGENTCAD_PROYECTO=<ruta>`). Todo es opcional y tiene un defecto. Ver el del ejemplo,
 que está comentado. Secciones: `[rutas]` (carpetas de STL, ensamblaje, specs, registro, trabajo, params), `[bases]` (líneas base: `part = "linea_base:placa"`), `[build]` (comando argv),
-`[material]`, `[impresion.<pieza>]` (walls, infill, rot, support, layer), `[poses.<nombre>]`, `[interferencia]` (exentos, categorías excluidas), `[respaldo]`, `[estructura.<pieza>]` (modelo de carga).
+`[material]`, `[impresion.<pieza>]` (walls, infill, rot, support, support_regiones, layer), `[poses.<nombre>]`, `[interferencia]` (exentos, categorías excluidas), `[respaldo]`, `[estructura.<pieza>]` (modelo de carga).
 Variables de entorno: `AGENTCAD_LOCK` (cola de tareas pesadas; por defecto `~/.cache/agentcad/heavy.lock`), `AGENTCAD_PYTHON`, `AGENTCAD_REGISTRO_DIR`, `AGENTCAD_TRABAJO_DIR`.
 
 El **ensamblaje** (`assembly.json`) es un JSON: `parts: [{id, file, matrix (4x4 en columnas), group, category, printable}]` y `joints: [{id, pivot, axis, groups|parts}]`; las rutas `file` son relativas a la raíz.
@@ -165,7 +165,7 @@ agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ning
 ## Pruebas
 
 ```bash
-python -m unittest discover -s tests -t .                     # suite completa (416 pruebas, ~1 min)
+python -m unittest discover -s tests -t .                     # suite completa (515 pruebas, ~1-2 min)
 AGENTCAD_RAPIDAS=1 python -m unittest discover -s tests -t .  # sin las pesadas (FEM, voxelización fina, procesos con límites, aligerado)
 python -m agentcad.bdd_runner tests/features/pipelines --pasos tests/features/pipelines/pasos_pipeline.py   # escenarios Gherkin en español
 python -m agentcad.cobertura --excluir 'tests/*' -- discover -s tests -t .      # cobertura de líneas con sys.monitoring (sin dependencias)
@@ -175,7 +175,6 @@ No hace falta pytest ni coverage. Las pruebas trabajan sobre el ejemplo o sobre 
 
 ## Hoja de ruta
 
-- Corregir los defectos 1 a 4 de `LIMITACIONES.md` (pared mínima como volumen de material fino, voladizos en la cama, soportes declarados, aviso de paso grueso por defecto).
 - Suite de verificación del solver FEM contra soluciones analíticas y de referencia (viga, tracción, placa con agujero, flexión en tres puntos, torsión, convergencia de malla) con tolerancias medidas.
 - Probar los adaptadores de `integraciones/` con Snakemake, LangGraph y Airflow reales; un caso de éxito documentado.
 

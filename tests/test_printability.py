@@ -138,6 +138,96 @@ class AnillosDegenerados(unittest.TestCase):
         self.assertGreater(r['puente']['luz_estimada_mm'], 10)       # el valor medido sigue informado
         self.assertTrue(r['islas']['numero'] >= 0)
 
+
+def mesa(nombre):
+    import manifold3d as M
+    return fx.guardar(M.Manifold.cube([30, 20, 3]).translate([0, 0, 10]) + M.Manifold.cube([3, 20, 10]) + M.Manifold.cube([3, 20, 10]).translate([27, 0, 0]), nombre)
+
+@pesada
+class F4MaterialFino(unittest.TestCase):
+    """F4/defecto 1: pared_min como VOLUMEN de material fino con severidad (puntual/localizada/extensa), no solo un mínimo global."""
+    def pieza(self, fin, nombre):
+        return fx.guardar(M.Manifold.cube([20, 20, 10]) + fin, nombre)
+    def test_cubo_no_tiene_material_fino(self):
+        r = pr.check_printability(fx.cubo(10))
+        self.assertLess(r['material_fino']['fraccion'], 0.005); self.assertEqual(r['material_fino']['severidad'], 'ninguna')
+    def test_aleta_localizada_mide_su_volumen(self):
+        r = pr.check_printability(self.pieza(M.Manifold.cube([15, 0.8, 10]).translate([20, 5, 0]), 'f4_aleta.stl'))
+        mf = r['material_fino']
+        self.assertAlmostEqual(mf['volumen_mm3'], 120.0, delta=48.0)          # 0,8 x 15 x 10 (+-40 %)
+        self.assertEqual(mf['severidad'], 'localizada')
+        c = next(c for c in r['criterios'] if c['id'] == 'pared_min_mm'); self.assertEqual(c['severidad'], 'localizada')
+    def test_aleta_diminuta_es_puntual(self):
+        r = pr.check_printability(self.pieza(M.Manifold.cube([3, 0.8, 3]).translate([20, 5, 0]), 'f4_aleta_pequena.stl'))
+        self.assertLess(r['pared_min_mm'], 1.2); self.assertEqual(r['material_fino']['severidad'], 'puntual')
+        self.assertLess(r['material_fino']['fraccion'], 0.005)
+    def test_pared_grande_es_extensa(self):
+        r = pr.check_printability(fx.guardar(M.Manifold.cube([0.8, 40, 40]), 'f4_pared.stl'))
+        self.assertEqual(r['material_fino']['severidad'], 'extensa'); self.assertGreater(r['material_fino']['fraccion'], 0.5)
+    def test_losa_fina_horizontal_cuenta_como_fino_vertical(self):
+        r = pr.check_printability(losa(1.0, 'f4_losa1.stl'))
+        self.assertEqual(r['material_fino']['severidad'], 'extensa')
+        self.assertAlmostEqual(r['material_fino']['volumen_mm3'], 1600.0, delta=400)
+    def test_pared_de_1_17_con_umbral_1_2_es_indeterminado(self):
+        r = pr.check_printability(fx.guardar(M.Manifold.cube([1.17, 30, 30]), 'f4_117.stl'))
+        c = next(c for c in r['criterios'] if c['id'] == 'pared_min_mm')
+        self.assertTrue(c['en_banda_tolerancia']); self.assertEqual(r['veredicto'], 'indeterminado')
+    def test_pared_claramente_gruesa_no_esta_en_banda(self):
+        r = pr.check_printability(losa(2.0, 'losa2.stl'))
+        self.assertFalse(next(c for c in r['criterios'] if c['id'] == 'pared_min_mm')['en_banda_tolerancia'])
+
+@pesada
+class F4VoladizoCama(unittest.TestCase):
+    """F4/defecto 2: las facetas casi horizontales dentro de la primera capa (en la cama) no son voladizo."""
+    def inclinada(self, grados, nombre):
+        bloque = M.Manifold.cube([20, 20, 5]).rotate([0, grados, 0])
+        zmin = np.asarray(bloque.to_mesh().vert_properties)[:, 2].min()
+        return fx.guardar(bloque.translate([0, 0, -zmin]), nombre)
+    def test_faceta_de_0_5_grados_sobre_la_cama_no_cuenta(self):
+        r = pr.check_printability(self.inclinada(0.5, 'f4_cama05.stl'))
+        self.assertEqual(r['voladizo']['area_mm2'], 0.0)
+        self.assertEqual(r['veredicto'], 'cumple')
+    def test_faceta_de_5_grados_si_es_voladizo(self):
+        r = pr.check_printability(self.inclinada(5, 'f4_cama5.stl'))
+        self.assertGreater(r['voladizo']['area_mm2'], 300)
+
+@pesada
+class F4SoportesConZona(unittest.TestCase):
+    """F4/defecto 3: con soportes declarados con zona (support_regiones) se comprueba que cubran lo medido."""
+    def test_zona_que_cubre_la_luz_cumple(self):
+        r = pr.check_printability(mesa('pieza_soporte_zona.stl'))
+        c = {x['id']: x for x in r['criterios']}
+        for k in ('islas', 'puente_mm', 'voladizo_frac'): self.assertTrue(c[k]['cumple'], c[k])
+        self.assertLessEqual(r['puente']['luz_estimada_mm'], 10.0)
+        self.assertGreater(r['puente']['luz_sin_soporte_mm'], 10.0)       # lo que mediría sin el soporte
+        self.assertTrue(r['soporte']['cobertura_verificada']); self.assertEqual(r['soporte']['regiones'], 1)
+        self.assertEqual(r['veredicto'], 'cumple')
+    def test_zona_parcial_deja_luz_sin_cubrir_y_falla(self):
+        r = pr.check_printability(mesa('pieza_soporte_parcial.stl'))
+        c = {x['id']: x for x in r['criterios']}
+        self.assertFalse(c['puente_mm']['cumple']); self.assertGreater(r['puente']['luz_estimada_mm'], 10.0)
+        self.assertFalse(c['voladizo_frac']['cumple'])
+        self.assertEqual(r['veredicto'], 'no_cumple')
+    def test_sin_zona_sigue_siendo_informativo(self):
+        r = pr.check_printability(mesa('pieza_soporte_demo.stl'))
+        self.assertFalse(r['soporte']['cobertura_verificada'])
+        self.assertTrue(all(x['cumple'] for x in r['criterios'] if x['id'] in ('islas', 'puente_mm', 'voladizo_frac')))
+    def test_isla_cubierta_por_zona(self):
+        import manifold3d as M
+        pil = M.Manifold.cube([4, 4, 10]); placa = M.Manifold.cube([30, 30, 3]).translate([-13, -13, 10]); diente = M.Manifold.cube([4, 4, 4]).translate([10, 10, 6])
+        r = pr.check_printability(fx.guardar(pil + placa + diente, 'pieza_soporte_isla.stl'))
+        c = {x['id']: x for x in r['criterios']}
+        self.assertEqual(r['islas']['numero'], 0); self.assertEqual(r['islas']['cubiertas'], 1); self.assertTrue(c['islas']['cumple'])
+        self.assertFalse(c['voladizo_frac']['cumple'])      # la placa (cara inferior) queda fuera de la zona declarada
+    def test_orientacion_explicita_ignora_las_zonas(self):
+        r = pr.check_printability(mesa('pieza_soporte_zona.stl'), orientacion_deg=[0, 0, 0])
+        self.assertFalse(r['soporte']['cobertura_verificada']); self.assertGreater(r['puente']['luz_estimada_mm'], 10.0)
+    def test_zona_mal_formada(self):
+        from agentcad import geom
+        self.assertEqual(pr.normalizar_regiones([[0, 0, 0, 1, 1, 1]]), [(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)])
+        with self.assertRaises(geom.ErrorHerramienta): pr.normalizar_regiones([[2, 0, 0, 1, 1, 1]])
+        with self.assertRaises(geom.ErrorHerramienta): pr.normalizar_regiones([[1, 2, 3]])
+
 @pesada
 class Errores(unittest.TestCase):
     def test_inexistente(self): self.assertEqual(pr.check_printability('zzz')['codigo'], 'pieza_no_encontrada')

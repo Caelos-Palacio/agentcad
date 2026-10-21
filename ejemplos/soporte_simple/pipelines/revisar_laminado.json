@@ -1,0 +1,13 @@
+{
+ "esquema": "agentcad.pipeline/1",
+ "nombre": "revisar_laminado",
+ "descripcion": "Tras laminar: analiza el gcode (islas, puentes, voladizos, cama, temperaturas, caudal) y escribe el informe. Digital: no sustituye la primera impresión.",
+ "parametros": {
+  "archivo": {"type": "string", "default": "gcode/ejemplo.gcode", "descripcion": "gcode a analizar (genera el del ejemplo con generar_gcode.py)"},
+  "perfil": {"type": "string", "default": ""}
+ },
+ "pasos": [
+  {"id": "gcode", "bloque": "check_gcode", "entradas": {"archivo": "$archivo", "perfil": "$perfil"}},
+  {"id": "informe", "bloque": "informe", "entradas": {"etiqueta": "laminado", "diario": "$_diario"}}
+ ]
+}

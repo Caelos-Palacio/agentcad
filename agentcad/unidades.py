@@ -11,6 +11,7 @@ FAMILIAS = {
     'presion': {'MPa': 1.0, 'kPa': 1e-3, 'Pa': 1e-6, 'GPa': 1000.0},
     'fuerza': {'N': 1.0, 'kN': 1000.0},
     'angulo': {'grados': 1.0, 'rad': 180.0 / math.pi},
+    'caudal': {'mm3/s': 1.0},
     'adimensional': {'adimensional': 1.0, 'fraccion': 1.0},
 }
 _UNIDAD = {u: f for f, us in FAMILIAS.items() for u in us}

@@ -79,3 +79,20 @@ support_regiones = [[3.0, 0.0, 0.0, 10.0, 20.0, 10.5]]
 [impresion.pieza_soporte_isla]   # solo para las pruebas: el soporte cubre el diente que arranca en el aire
 support = "mínimo, bajo el diente"
 support_regiones = [[9.0, 9.0, 5.5, 15.0, 15.0, 6.8]]
+
+# check_gcode: perfil de máquina (cama, altura y límites) contra el que se analiza un gcode ya laminado. Valores de ejemplo: pon los de TU impresora.
+[gcode]
+perfil = "ejemplo"
+celda_mm = 0.2                   # rejilla del análisis por capa
+
+[gcode.perfiles.ejemplo]
+cama_x_mm = 220.0                # obligatorios
+cama_y_mm = 220.0
+z_max_mm = 250.0
+caudal_max_mm3_s = 8.0           # opcionales: sin límite declarado no se comprueba
+temp_boquilla_max = 250
+temp_cama_max = 80
+velocidad_max_mm_s = 300
+velocidad_primera_capa_mm_s = 50
+limites_rol = { "Outer wall" = 120, "Sparse infill" = 120 }
+densidad_g_cm3 = 1.27

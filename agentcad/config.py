@@ -25,6 +25,7 @@ DEFECTOS = dict(
     poses={},                                         # nombre -> {articulacion: grado}
     interferencia=dict(excluir_categorias=[], excluir_grupos=[], exentos=[], umbral_mm3=0.1),
     respaldo=dict(archivos=[], directorios=[]),
+    gcode=dict(perfil='', celda_mm=0.2, perfiles={}),   # check_gcode: perfiles de máquina (cama_x_mm, cama_y_mm, z_max_mm, límites); ver README
     estructura={},                                    # pieza -> modelo de carga (ver structure.py)
 )
 

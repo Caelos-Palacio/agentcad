@@ -1,6 +1,8 @@
 # Registro de cambios
 
-## Sin publicar
+## 0.2.0
+
+F6: caso de uso documentado en `docs/caso_brazo_robotico.md` (cifras del proyecto de origen, todas digitales).
 
 F5: suite de verificación del solver (`validacion/`, TDD): voladizo, tracción, placa con agujero (Kt de Peterson), flexión en tres puntos, torsión de Saint-Venant y placa apoyada, con convergencia de malla
 (orden observado, extrapolación de Richardson), tablas, gráficas y resolución mínima recomendada por tipo de pieza. `evaluate_structure` lee `agentcad/validacion_fem.json` y devuelve `fidelity.error_medido`;

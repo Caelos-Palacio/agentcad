@@ -6,7 +6,7 @@
 > structured, deterministic tools for 3D-printable designs: `describe_part`, `check_interference`, `check_printability`, `evaluate_structure` (returns `no_validado` when there is no load model),
 > `apply_hex_lightening`, `check_spec` (spec-as-code, JSON Schema), plus a compact catalog of composable *blocks* (unos 600 tokens), declarative JSON pipelines (`si` / `para_cada` / `en_fallo` / rollback),
 > an executor with dry-run validation, run journal, resume and a simulated mode. Central principle: **a digital result is never labelled as physical.** Everything here is digital verification;
-> nothing replaces printing, assembling and testing the part. Alpha (0.1.0), Spanish-language docs and messages. MIT licence. See `LIMITACIONES.md` for the honest list of known defects.
+> nothing replaces printing, assembling and testing the part. Alpha (0.2.0), Spanish-language docs and messages. MIT licence. See `LIMITACIONES.md` for the honest list of known defects.
 
 ## Por qué
 
@@ -154,6 +154,11 @@ agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ning
 
 4. **Adaptadores finos** en [`integraciones/`](integraciones/README.md) para ejecutar un bloque o pipeline como regla de **Snakemake**, nodo de **LangGraph** o tarea de **Airflow**. **No están probados con la librería real**
    (no están instaladas aquí): solo con dobles que verifican la lógica del adaptador (entradas, JSON de salida, fallo por puerta en rojo, reanudación).
+
+## Caso de éxito
+
+Extraído de un brazo robótico impreso en 3D: el flujo de agentes bajó el conjunto de 490,1 g (rev. 3.7) a 463,7 g (rev. 3.8), cazó un nervio de 0,67 mm que el FEM de 1 mm no veía y **rechazó** `turret_c` porque su margen bajaba (2,03 a 1,97).
+`base_flange` 76,8 a 57,0 g con margen 0,34 a 0,68 (sigue incumpliendo >= 2, declarado). Todo digital: falta imprimir, pesar y ensayar. Detalle y límites en [`docs/caso_brazo_robotico.md`](docs/caso_brazo_robotico.md).
 
 ## Verificación numérica del solver
 

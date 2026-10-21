@@ -10,7 +10,7 @@ AGENTCAD_RAICES_EXTRA (rutas adicionales permitidas para `part`, separadas por o
 import copy, os, sys, tomllib
 from pathlib import Path
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 ROOT = Path(__file__).resolve().parent          # directorio del paquete (esquemas JSON)
 
 DEFECTOS = dict(

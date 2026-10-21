@@ -1,6 +1,6 @@
 # Limitaciones conocidas (léelas antes de fiarte de un número)
 
-Esta es la lista honesta, a fecha de la versión 0.1.0. Nada de lo que produce agentcad es un resultado físico.
+Esta es la lista honesta, a fecha de la versión 0.2.0. Nada de lo que produce agentcad es un resultado físico.
 
 ## Qué es y qué no es un resultado
 

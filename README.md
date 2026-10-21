@@ -153,7 +153,7 @@ Adaptadores finos para ejecutar un pipeline/bloque como regla de Snakemake, nodo
 ## Pruebas
 
 ```bash
-python -m unittest discover -s tests -t .                     # suite completa (415 pruebas, ~1 min)
+python -m unittest discover -s tests -t .                     # suite completa (416 pruebas, ~1 min)
 AGENTCAD_RAPIDAS=1 python -m unittest discover -s tests -t .  # sin las pesadas (FEM, voxelización fina, procesos con límites, aligerado)
 python -m agentcad.bdd_runner tests/features/pipelines --pasos tests/features/pipelines/pasos_pipeline.py   # escenarios Gherkin en español
 python -m agentcad.cobertura --excluir 'tests/*' -- discover -s tests -t .      # cobertura de líneas con sys.monitoring (sin dependencias)

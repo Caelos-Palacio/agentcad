@@ -11,7 +11,7 @@ Extraído de un proyecto de robótica (brazo articulado impreso en 3D) y desacop
   diario con checkpoints, reanudación y modo simulado.
 - Configuración por proyecto en `agentcad.toml` (rutas, comando de build, perfiles de impresión, poses, modelos de carga). Sin rutas fijas.
 - Ejemplo autocontenido `ejemplos/soporte_simple/` (STL generados con manifold3d; no requiere OpenSCAD).
-- SDD/TDD/BDD en español: `docs/SDD.md`, 415 pruebas, escenarios Gherkin con ejecutor propio, medidor de cobertura propio (`sys.monitoring`).
+- SDD/TDD/BDD en español: `docs/SDD.md`, 416 pruebas (1 omitida; cobertura de líneas 91,2 % con el medidor propio), escenarios Gherkin con ejecutor propio, medidor de cobertura propio (`sys.monitoring`).
 
 Cambios respecto al origen (decoupling):
 - Eliminados los bloques y datos específicos del brazo (`subir_rev`, `verify`, `empaquetar`, `regenerar_tablas_docs`, goldens de piezas, catálogo de fallos).

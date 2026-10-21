@@ -20,3 +20,4 @@ cobertura.json
 # solo para el mantenedor (no se publican)
 SNAPSHOT_ORIGEN.txt
 PUBLICACION.md
+HANDOFF_FASES.md

@@ -31,4 +31,32 @@ class Contrato(contrato.ContratoBloque):
         s = pl.ejecutar_bloque(self.NOMBRE, dict(pieza='soporte'), self.p.ctx)
         self.assertTrue(s['ok']); self.assertEqual(s['pared_min_mm'], 1.6)
 
+    def test_defecto_preexistente_que_no_empeora_pasa_pero_se_marca(self):
+        from agentcad.bloques import puerta_pared_min as m
+        r = m._ver(dict(umbral_mm=1.2), 0.16, 0.0, 0.16); self.assertTrue(r['ok']); self.assertTrue(r['preexistente']); self.assertEqual(r['veredicto'], 'preexistente_no_peor')
+
+    def test_defecto_que_empeora_la_base_falla(self):
+        from agentcad.bloques import puerta_pared_min as m
+        r = m._ver(dict(umbral_mm=1.2), 0.30, 0.0, 0.87); self.assertFalse(r['ok']); self.assertFalse(r['preexistente'])
+
+    def test_base_que_cumple_exige_el_umbral(self):
+        from agentcad.bloques import puerta_pared_min as m
+        self.assertFalse(m._ver(dict(umbral_mm=1.2), 1.0, 0.0, 1.6)['ok'])
+
+    def test_racha_vertical_de_un_voxel_no_cuenta_pero_se_informa(self):
+        from agentcad.bloques import puerta_pared_min as m
+        r = dict(pared_min_mm=0.3, fidelidad=dict(espesor_vertical_min_mm=0.3, paso_mm=0.3), puntos_finos=[dict(tipo='en_plano', espesor_mm=0.87)])
+        self.assertEqual(m.efectiva(r), (0.87, True))
+        r['fidelidad']['espesor_vertical_min_mm'] = 0.9; self.assertEqual(m.efectiva(r), (0.3, False))     # 3 vóxeles: resuelto y cuenta
+
+    def test_sin_puntos_en_plano_la_pared_efectiva_cumple(self):
+        from agentcad.bloques import puerta_pared_min as m
+        r = dict(pared_min_mm=0.3, fidelidad=dict(espesor_vertical_min_mm=0.3, paso_mm=0.3), puntos_finos=[])
+        self.assertGreaterEqual(m.efectiva(r)[0], 1.2)
+
+    def test_ejecucion_real_sobre_el_ejemplo_compara_con_la_linea_base(self):
+        s = pl.ejecutar_bloque(self.NOMBRE, dict(pieza='placa_soporte', umbral_mm=1.2), dict(raiz=None, simulado=False))
+        self.assertTrue(s['ok']); self.assertEqual(s['veredicto'], 'cumple'); self.assertFalse(s['preexistente'])
+        self.assertGreater(s['pared_min_mm'], 1.2)
+
 if __name__ == '__main__': unittest.main()

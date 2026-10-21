@@ -1,5 +1,10 @@
 # Registro de cambios
 
+## Sin publicar
+
+- `puerta_pared_min` (sincronizado con el origen): compara con la línea base (`base`, defecto `linea_base`); un defecto preexistente que no empeora pasa con veredicto `preexistente_no_peor` y `preexistente=true`;
+  una racha vertical de <= 1,5 vóxeles se descarta como aliasing y se informa (`vertical_no_resuelto`). 19 pruebas del bloque.
+
 ## 0.1.0 (primera versión publicable)
 
 Extraído de un proyecto de robótica (brazo articulado impreso en 3D) y desacoplado de él.

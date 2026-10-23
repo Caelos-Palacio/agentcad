@@ -1,3 +1,5 @@
+**English:** [LIMITATIONS.md](LIMITATIONS.md)
+
 # Limitaciones conocidas (léelas antes de fiarte de un número)
 
 Esta es la lista honesta, a fecha de la versión 0.3.0. Nada de lo que produce agentcad es un resultado físico.
@@ -15,7 +17,7 @@ Esta es la lista honesta, a fecha de la versión 0.3.0. Nada de lo que produce a
 
 ## Defectos conocidos del núcleo
 
-Resueltos en 0.2.0 (ver `CHANGELOG.md`): pared mínima como volumen de material fino con severidad, voladizos/islas/puentes en la primera capa, soportes declarados con zona y aviso de paso grueso por defecto.
+Resueltos en 0.2.0 (ver `CHANGELOG.md` (en inglés)): pared mínima como volumen de material fino con severidad, voladizos/islas/puentes en la primera capa, soportes declarados con zona y aviso de paso grueso por defecto.
 Matices que quedan de esas correcciones:
 
 1. **Material fino aproximado.** `material_fino.volumen_mm3` es espesor x cresta x capa (plano) más las losas finas (vertical): una estimación (±~30 %), no un volumen exacto, y la severidad

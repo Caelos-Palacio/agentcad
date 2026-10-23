@@ -3,6 +3,7 @@ import hashlib, json, re
 from pathlib import Path
 import numpy as np, trimesh, manifold3d as M
 from . import config
+from . import instr
 
 class ErrorHerramienta(Exception):
     def __init__(self, codigo, mensaje): super().__init__(mensaje); self.codigo = codigo; self.mensaje = mensaje
@@ -43,6 +44,7 @@ def resolver(part):
         if (d / f'{part}.stl').is_file(): return dict(ruta=d / f'{part}.stl', nombre=part, modulo=part, origen=str(d.relative_to(config.proyecto().raiz)))
     raise ErrorHerramienta('pieza_no_encontrada', f"no existe la pieza {part} en {config.proyecto()['rutas']['stl']} (rutas.stl de agentcad.toml)")
 
+@instr.medida('geom_cargar_malla')
 def cargar(ruta): return trimesh.load(str(ruta), force='mesh')
 
 def perfil(modulo, override=None):
@@ -77,6 +79,7 @@ def rotacion_eje(pivote, eje, angulo_deg):
     a = np.array(eje, float); a /= np.linalg.norm(a); x, y, z = a; k = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]]); t = np.radians(angulo_deg)
     r = np.eye(3) + np.sin(t) * k + (1 - np.cos(t)) * (k @ k); m = np.eye(4); m[:3, :3] = r; m[:3, 3] = np.array(pivote) - r @ np.array(pivote); return m
 
+@instr.medida('geom_masa')
 def masa_g(ruta, prof):
     """Volumen, área, centro de masa y masa estimada de impresión desde una malla cerrada.
     Cáscara = área x perímetros x ancho de línea (acotada por el volumen); el resto al % de relleno. Estimación, no pesada."""

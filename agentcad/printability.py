@@ -3,7 +3,7 @@ La pared se mide con la transformada de distancia sobre vóxeles FINOS (paso <= 
 así un nervio de 0,67 mm no pasa desapercibido. Reutiliza fem3d.voxelize_tris. Comprobación digital: no prueba que la impresora lo logre."""
 import numpy as np
 import scipy.ndimage as ndi
-from . import config, geom
+from . import config, geom, instr
 from .geom import ErrorHerramienta, r4
 from .fem3d import voxelize_tris      # respaldo para mallas no variedad
 from PIL import Image, ImageDraw
@@ -65,6 +65,7 @@ def _capa(mf, z, lo, nx, ny, q):
         img[y0:y1, x0:x1] ^= np.asarray(im, bool)
     return img
 
+@instr.medida('imprimibilidad_voxelizar')
 def voxelizar(mf, verts, caras, p, lo, shape):
     """Ocupación en centros de vóxel por cortes horizontales de manifold3d (robusto ante aristas coplanares)."""
     if mf is None: return voxelize_tris(verts[caras], p, lo, shape), 'voxelize_tris'
@@ -74,6 +75,7 @@ def voxelizar(mf, verts, caras, p, lo, shape):
         if zmin <= z <= zmax: occ[:, :, k] = _capa(mf, z, lo, nx, ny, p).T
     return occ, 'cortes_manifold'
 
+@instr.medida('imprimibilidad_pared_plano')
 def pared_en_plano(mf, occ, p, lo, esc, umbral, long_min_mm=0.5):
     """Espesor en el plano de capa (perímetros/nervios): EDT 2D por capa con píxel p/esc. Solo recalcula si la sección cambia.
     Un píxel «fino» (espesor < umbral) solo cuenta si (1) su cresta fina mide >= long_min_mm (descarta motas de 1 píxel) y (2) PERSISTE en la capa
@@ -137,6 +139,7 @@ def pared_en_plano(mf, occ, p, lo, esc, umbral, long_min_mm=0.5):
     mejor = min([gruesa] + [t[3] for t in persist])
     return (float(mejor) if np.isfinite(mejor) else 0.0), persist, vol_fino
 
+@instr.medida('imprimibilidad_pared_vertical')
 def espesor_vertical(occ, p, umbral, tope=6.0):
     """Espesor en Z de losas/techos/suelos: longitud de las rachas verticales de material, en regiones de losa (>= 2·umbral de ancho).
     Devuelve (mínimo_mm o None si no hay losas más finas que `tope`, volumen_mm3 de las columnas de losa con racha < umbral)."""
@@ -157,6 +160,7 @@ def _orientar(mesh, rot):
     v = mesh.vertices @ R.T; dz = v[:, 2].min(); v = v - np.array([0, 0, dz])
     return v, R, dz
 
+@instr.medida('imprimibilidad_voladizo')
 def _voladizo(mesh, R, vz, ang_max, cama_mm=CAPA_CAMA_MM, cajas=()):
     """Área de caras que miran hacia abajo más de ang_max. Se excluyen (1) las caras ENTERAS dentro de la primera capa (z <= max(0,05 mm, cama_mm)): están en la cama,
     aunque sean casi horizontales, y (2) las caras cuyo centroide cae dentro de una zona de soporte declarada (`cajas`, marco de impresión)."""
@@ -178,6 +182,7 @@ def _capa0(occ):
 
 def _capas_cama(p, cama_mm): return max(1, int(np.ceil(cama_mm / p - 1e-9)))
 
+@instr.medida('imprimibilidad_islas')
 def _islas(occ, p, min_mm2, cub=None, cama_mm=CAPA_CAMA_MM):
     """(islas sin cubrir, islas cubiertas por una zona de soporte declarada). Una isla está cubierta si >= 50 % de su huella cae en `cub` (máscara 3D).
     No se analizan las capas dentro de la primera altura de capa sobre la cama (`cama_mm`): ahí una faceta casi horizontal escalona la huella sin ser una isla."""
@@ -196,6 +201,7 @@ def _islas(occ, p, min_mm2, cub=None, cama_mm=CAPA_CAMA_MM):
             else: n += 1
     return n, nc
 
+@instr.medida('imprimibilidad_puente')
 def _puente(occ, p, cub=None, cama_mm=CAPA_CAMA_MM):
     """Cota superior de la luz (mm). Si hay zonas de soporte declaradas (`cub`, máscara 3D), los vóxeles dentro de ellas cuentan como apoyados."""
     dmax = 0.0

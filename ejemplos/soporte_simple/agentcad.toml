@@ -109,3 +109,14 @@ s_por_g = 135.1                  # segundos de impresión por gramo de masa del 
 error_tiempo_rel = 0.16
 n_grupos = 4
 origen = "4 placas de otro proyecto, Kobra 3"
+
+# laminar: laminador de línea de comandos. El ejemplo usa el laminador FALSO (`@falso`: gcode SINTÉTICO, sin laminador instalado) para poder ensayar el pipeline `laminar_y_revisar`.
+# Para uno real (Orca, Anycubic Slicer Next...) ver docs/laminado.md: `comando`, `datadir` (se COPIA), `maquina`, `proceso` y `filamento` (nombre de perfil del datadir o ruta de un JSON).
+[laminar]
+perfil = "ejemplo_falso"
+
+[laminar.perfiles.ejemplo_falso]
+comando = ["@falso"]
+cama_x_mm = 220.0                # la placa se centra en la cama y se comprueba que cabe (con margen_mm)
+cama_y_mm = 220.0
+z_max_mm = 250.0

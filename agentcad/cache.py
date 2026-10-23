@@ -37,9 +37,17 @@ def clave(mod, entradas, ctx):
 def _ruta(mod, k, ctx): return _raiz(ctx) / 'build' / 'cache' / mod.MANIFIESTO['nombre'] / f'{k}.json'
 
 def buscar(mod, k, ctx):
+    """Salidas guardadas con clave `k`, o None. Un bloque cuyas salidas son RUTAS a ficheros puede declarar `cache_valida(salidas, ctx) -> bool`:
+    si devuelve False (p. ej. el gcode o el PNG ya no existe) el acierto se descarta y se recalcula."""
     f = _ruta(mod, k, ctx)
-    try: return json.loads(f.read_text())['salidas']
+    try: sal = json.loads(f.read_text())['salidas']
     except (OSError, ValueError, KeyError): return None
+    valida = getattr(mod, 'cache_valida', None)
+    if valida is not None:
+        try:
+            if not valida(sal, ctx): return None
+        except Exception: return None
+    return sal
 
 def guardar(mod, k, entradas, salidas, ctx):
     f = _ruta(mod, k, ctx); f.parent.mkdir(parents=True, exist_ok=True); tmp = f.with_suffix('.tmp')

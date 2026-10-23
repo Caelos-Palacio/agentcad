@@ -4,6 +4,7 @@ import contextlib, copy, io, json, os, tempfile, time, unittest
 from pathlib import Path
 from agentcad import bloques, cache, instr, perfil, pipeline as pl
 from tests.test_pipeline import Falso, pipe, Base
+from tests._marcas import pesada
 
 def paso(bloque, seg, pico=100.0, cache_=None, h='a' * 64, etapas=None, cpu=None, espera=0.0, estado='ok', top=None, **extra):
     p = dict(bloque=bloque, estado=estado, top=top or 'x', entradas={}, salidas={'ok': True}, segundos=seg + espera,
@@ -262,3 +263,21 @@ class Cli(unittest.TestCase):
         rc, _, e = self.run_cli('perfilar', '--raiz', str(self.raiz)); self.assertEqual(rc, 2)
 
 if __name__ == '__main__': unittest.main()
+
+class EjemploInstrumentado(unittest.TestCase):
+    """El pipeline instrumentado del ejemplo (ejemplos/soporte_simple/pipelines/revisar_pieza_perfilado.json)."""
+    RUTA = Path(__file__).resolve().parent.parent / 'ejemplos' / 'soporte_simple' / 'pipelines' / 'revisar_pieza_perfilado.json'
+    def test_valida(self):
+        p = json.loads(self.RUTA.read_text()); self.assertEqual(pl.validar(p, {'pieza': 'placa_soporte'}), []); self.assertEqual(p['nombre'], self.RUTA.stem); self.assertEqual(p['pasos'][-1]['bloque'], 'perfilar_pipeline')
+    @pesada
+    def test_corrida_real_sobre_copia_deja_el_informe_con_etapas_internas(self):
+        import shutil, sys
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as t:
+            ej = Path(t) / 'ej'; shutil.copytree(self.RUTA.parent.parent, ej, ignore=shutil.ignore_patterns('build', 'registro', 'trabajo', 'stl', 'stl_base'))
+            env = {'AGENTCAD_PROYECTO': str(ej), 'AGENTCAD_PERMITIR_REAL': '1', 'AGENTCAD_LOCK_HELD': '1', 'PATH': os.path.dirname(sys.executable) + os.pathsep + os.environ.get('PATH', '')}
+            with mock.patch.dict(os.environ, env):
+                d = pl.Ejecutor(json.loads(self.RUTA.read_text()), {'pieza': 'placa_soporte'}, 'e1', ej, simulado=False).correr()
+            self.assertEqual(d['estado'], 'ok', d.get('fallo')); sal = d['pasos']['perfil']['salidas']; self.assertTrue(sal['ok'])
+            rep = json.loads((ej / sal['ruta_json']).read_text()); self.assertEqual(rep['total']['pasos'], 5)
+            self.assertIn('imprimibilidad_pared_plano', {e['etapa'] for e in rep['etapas']} | {e['etapa'] for p in d['pasos'].values() for e in p.get('perfil', {}).get('etapas', [])})

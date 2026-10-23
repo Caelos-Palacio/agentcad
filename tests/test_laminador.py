@@ -6,6 +6,19 @@ from validacion.laminador import metricas as m
 
 RAIZ = Path(__file__).resolve().parents[1] / 'validacion' / 'laminador'
 
+def casi_igual(a, b, rel=1e-9, abs_=1e-12, ruta='raiz'):
+    """Comparación recursiva con tolerancia para floats (ajustes numéricos difieren en los últimos dígitos entre plataformas/BLAS); el resto, igualdad exacta."""
+    if isinstance(a, float) or isinstance(b, float):
+        if isinstance(a, bool) or isinstance(b, bool) or not isinstance(a, (int, float)) or not isinstance(b, (int, float)): raise AssertionError(f'{ruta}: {a!r} != {b!r}')
+        if abs(a - b) > max(abs_, rel * max(abs(a), abs(b))): raise AssertionError(f'{ruta}: {a!r} != {b!r} (rel > {rel})')
+    elif isinstance(a, dict) and isinstance(b, dict):
+        if set(a) != set(b): raise AssertionError(f'{ruta}: claves distintas {sorted(set(a) ^ set(b))}')
+        for k in a: casi_igual(a[k], b[k], rel, abs_, f'{ruta}.{k}')
+    elif isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
+        if len(a) != len(b): raise AssertionError(f'{ruta}: longitudes {len(a)} != {len(b)}')
+        for i, (x, y) in enumerate(zip(a, b)): casi_igual(x, y, rel, abs_, f'{ruta}[{i}]')
+    elif a != b: raise AssertionError(f'{ruta}: {a!r} != {b!r}')
+
 class Matriz(unittest.TestCase):
     def test_clases_y_tasas(self):
         r = m.matriz(dict(a=True, b=True, c=False, d=False), dict(a=True, b=False, c=True, d=False))
@@ -30,8 +43,8 @@ class Guardado(unittest.TestCase):
         cls.pr, cls.ver, cls.lam = (json.loads((RAIZ / 'datos' / f'{n}.json').read_text()) for n in ('printability', 'verdad_laminador', 'laminado'))
         cls.res = json.loads((RAIZ / 'resultados.json').read_text())
     def test_resultados_se_reproducen_desde_los_datos(self):
-        self.assertEqual(json.loads(json.dumps(m.comparar(self.pr, self.ver))), self.res['comparacion'])
-        self.assertEqual(json.loads(json.dumps(m.masa_y_tiempo(self.lam))), self.res['masa_tiempo'])
+        casi_igual(json.loads(json.dumps(m.comparar(self.pr, self.ver))), self.res['comparacion'])
+        casi_igual(json.loads(json.dumps(m.masa_y_tiempo(self.lam))), self.res['masa_tiempo'])
     def test_informe_coincide_con_los_resultados(self):
         self.assertEqual(m.informe(self.res['comparacion'], self.res['masa_tiempo'], self.pr, self.ver), (RAIZ / 'INFORME.md').read_text())
     def test_16_piezas_y_confusion_suma_16(self):

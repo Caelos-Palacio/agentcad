@@ -14,6 +14,7 @@ TOL_REL, TOL_ABS_S = 0.10, 0.05          # una variación menor que esto (relati
 _NOMBRE = re.compile(r'[\w\-.]{1,60}')
 
 class PerfilError(ValueError): pass
+class DiarioNoEncontrado(PerfilError): pass
 
 def _validar_nombre(x, que):
     if not isinstance(x, str) or not _NOMBRE.fullmatch(x) or '..' in x: raise PerfilError(f'{que} inválido: {x!r} (letras, dígitos, _ - .)')
@@ -22,7 +23,7 @@ def ruta_diario(raiz, nombre, corrida): return Path(raiz) / 'build' / 'pipelines
 
 def leer_diario(raiz, nombre, corrida):
     _validar_nombre(nombre, 'pipeline'); _validar_nombre(corrida, 'corrida'); f = ruta_diario(raiz, nombre, corrida)
-    if not f.is_file(): raise PerfilError(f'no existe el diario de {nombre}#{corrida} ({f.relative_to(Path(raiz)) if Path(raiz) in f.parents else f})')
+    if not f.is_file(): raise DiarioNoEncontrado(f'no existe el diario de {nombre}#{corrida} ({f.relative_to(Path(raiz)) if Path(raiz) in f.parents else f})')
     try: return json.loads(f.read_text())
     except ValueError as e: raise PerfilError(f'diario ilegible ({f.name}): {e}') from None
 

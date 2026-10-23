@@ -13,6 +13,7 @@ FAMILIAS = {
     'angulo': {'grados': 1.0, 'rad': 180.0 / math.pi},
     'tiempo': {'s': 1.0, 'min': 60.0, 'h': 3600.0},
     'caudal': {'mm3/s': 1.0},
+    'memoria': {'MiB': 1.0, 'GiB': 1024.0},
     'adimensional': {'adimensional': 1.0, 'fraccion': 1.0},
 }
 _UNIDAD = {u: f for f, us in FAMILIAS.items() for u in us}

@@ -1,0 +1,14 @@
+{
+ "esquema": "agentcad.pipeline/1",
+ "nombre": "laminar_y_revisar",
+ "descripcion": "Lamina una placa (en modo simulado con el laminador FALSO: gcode sintético), analiza el gcode y dibuja una vista superior y lateral coloreada. Digital: no sustituye la primera impresión.",
+ "parametros": {
+  "placa": {"type": "string", "default": "stl/placa_soporte.stl", "descripcion": "placa STL (un objeto por pieza) o 3MF"},
+  "perfil": {"type": "string", "default": "", "descripcion": "perfil de [laminar.perfiles.<nombre>]; vacío = laminar.perfil"}
+ },
+ "pasos": [
+  {"id": "laminar", "bloque": "laminar", "entradas": {"placa": "$placa", "perfil": "$perfil"}},
+  {"id": "gcode", "bloque": "check_gcode", "entradas": {"archivo": "$laminar.gcode"}},
+  {"id": "render", "bloque": "render_gcode", "entradas": {"archivo": "$laminar.gcode"}}
+ ]
+}

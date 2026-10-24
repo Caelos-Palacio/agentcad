@@ -1,0 +1,15 @@
+Resumen para el CHANGELOG 0.4.0 (parte laminado; lo integra el supervisor). Todo digital: ningún gcode, PNG ni copia verificada prueba una impresión.
+
+Laminado, render y exportación (docs/laminado.md):
+- **Bloque `laminar`** (`agentcad/bloques/laminar.py`, núcleo en `agentcad/laminador.py`): envuelve un laminador de línea de comandos tipo Orca/Anycubic Slicer Next. Entradas: placa STL (un objeto por componente conectado) o 3MF,
+  ajustes por objeto, perfil (`[laminar.perfiles.<nombre>]` de agentcad.toml: comando, datadir, máquina/proceso/filamento, cama). Salida por referencia: ruta del gcode, manifiesto JSON con unidades y hashes, tiempo (min), filamento (g), capas.
+  Escritor de 3MF por objetos sin dependencias nuevas (zip a mano, determinista), copia temporal del datadir (el original no se toca), plantilla de ajustes exportada con el propio laminador, cola pesada (flock), caché por hash,
+  diagnóstico de fallos y reintento de choques de soportes (organic + ángulo de rama 5 grados, configurable). Modo simulado con un laminador FALSO (`agentcad/laminador_falso.py`, gcode sintético) para pruebas y CI.
+  Probado con Anycubic Slicer Next real sobre una placa pequeña (opcional, `AGENTCAD_LAMINADOR_REAL`).
+- **Bloques `render_gcode` y `render_stl`** (`agentcad/render.py`): PNG con matplotlib sin pyplot; gcode en streaming con submuestreo de memoria acotada, coloreado por tipo de extrusión y soporte (vistas superior y lateral); STL en tres vistas.
+- **Bloque `exportar_copia`**: copia a un directorio ya montado (p. ej. USB) con comprobación previa de conflictos y espacio, verificación binaria, nunca sobrescribe, no formatea/desmonta/toca particiones, `deshacer` borra solo lo copiado,
+  modo simulado = ensayo, lista blanca opcional `[exportar] destinos_permitidos`.
+- Pipeline `laminar_y_revisar` en `ejemplos/soporte_simple` (laminar -> check_gcode -> render_gcode) en modo simulado y en real con el laminador falso; `[laminar]` en su agentcad.toml.
+- Gancho `cache_valida(salidas, ctx)` en `agentcad/cache.py`: un bloque cuyas salidas son rutas descarta el acierto de caché si el fichero ya no existe. Ayudas de rutas en `agentcad/bloques/_rutas.py`.
+- Catálogo: 11 a 15 bloques, de 2759 a 4188 caracteres (788 a ~1197 tokens a 3,5 caracteres/token).
+- Limitaciones nuevas en LIMITACIONES.md (sección «Laminado, render y exportación»): el remedio de soportes no se pudo verificar contra un choque real resuelto; solo Anycubic Slicer Next probado; 3MF dado = sin reintento.

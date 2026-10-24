@@ -39,6 +39,26 @@ Matices que quedan de esas correcciones:
 - **La calibración de masa y tiempo es indicativa.** Salen de 4 placas (12 combinaciones que repiten esas 4 geometrías), una familia de piezas, PETG y un perfil de laminado. Error de validación cruzada dejando fuera una placa: filamento 7 a 8 % medio (máx. 11 %), tiempo 8 a 9 % (máx. 18 %). Más parámetros empeoran el resultado.
   El estimador de masa del CAD sobrestima (468 g frente a 393 a 405 g del laminador con soportes). `estimar_impresion` marca `fiable: false` con menos de 8 grupos y exige que declares tu calibración.
 
+## Laminado, render y exportación (parte laminado de 0.4.0; ver `docs/laminado.md`)
+
+- **`laminar` solo se ha probado de verdad con Anycubic Slicer Next 2.0.0.5** (una placa de dos cubos, Kobra 3, PETG: ok). Orca, Bambu y PrusaSlicer no se han probado; los ajustes por objeto usan el formato Bambu/Orca (`model_settings.config`) y el de PrusaSlicer es distinto.
+  La prueba con el laminador real es opcional y se omite sin él (`AGENTCAD_LAMINADOR_REAL`); el resto de la suite y el CI usan el laminador FALSO (`@falso`), cuyo gcode es sintético y no predice tiempos, filamento ni soportes.
+- **El reintento de choques de soportes no está verificado contra un caso real resuelto.** El diagnóstico sí: con dos piezas en L con soporte en árbol el laminador real abortó con «gcode path conflicts» (código 155) y el bloque lo clasificó como
+  `choque_de_soportes`; pero el remedio (estilo organic, ángulo de rama 5 grados, el que resolvió el caso del proyecto de origen) **no** lo resolvió con esa geometría sintética (4 de 4 colocaciones probadas; el caso original, piezas largas a 8 mm,
+  no se reprodujo). El reintento funciona contra el laminador falso. Si no basta devuelve `ok: false` con la causa; el remedio es una lista (`reintentos_soporte`) que debes ajustar a tu caso. El reconocimiento del choque se basa en el texto del log
+  («path conflict(s)», «conflict(s) between», «collision») de esta versión del laminador.
+- **Un 3MF dado como `placa` se lamina tal cual**: sus ajustes de proceso no se pueden reaplicar, así que no hay reintento de soportes y los ajustes por objeto de la llamada se ignoran (se avisa en el manifiesto).
+- Un STL se separa en componentes conectados y cada uno es un objeto: dos piezas que se tocan o se solapan en la malla forman un solo objeto; una pieza hecha de mallas no soldadas se parte en varios.
+- El resumen (tiempo, filamento, capas) es el que el laminador escribe en el gcode (tiempo en modo normal; el silencioso sale ~1,5 veces más largo); si no lo escribe, se informa 0 con aviso. `laminar` exige un `datadir` para el laminador real (nunca usa el original).
+  La copia del datadir puede tardar con datadirs grandes (el de Anycubic ocupa 13 MB).
+- **`render_gcode`**: no dibuja arcos G2/G3 (los cuenta); el submuestreo es uniforme (1 de cada `s` segmentos), así que un gcode enorme sale punteado y los segmentos pequeños de soporte pueden perderse; la vista superior deja encima la última capa
+  (el relleno de las capas inferiores se ve poco); las capas se cuentan por `;LAYER_CHANGE` (el laminador puede informar una menos). Velocidad medida ~9 MB/s: unos minutos para gcodes de varios cientos de MB. Es una imagen, no un análisis (para eso está `check_gcode`).
+- **`render_stl`** proyecta triángulos con el algoritmo del pintor: sin oclusión exacta ni iluminación real; en mallas muy densas dibuja un subconjunto por paso fijo.
+- **`exportar_copia`** verifica releyendo a través del sistema operativo (con `fsync` y `posix_fadvise(DONTNEED)` de mejor esfuerzo): no demuestra que los datos estén en el medio físico ni que este esté sano; expulsa el USB a mano. `deshacer` deriva su registro de los mismos
+  orígenes y destino de la llamada (si cambian o desaparecen, no lo encuentra); no recrea directorios vacíos del origen; omite enlaces simbólicos dentro de directorios; un error de E/S (p. ej. disco lleno a mitad) se propaga como fallo del paso y lo ya copiado queda registrado para deshacer.
+  Por defecto acepta cualquier directorio existente: declara `[exportar] destinos_permitidos` en `agentcad.toml` para limitarlo a tu punto de montaje.
+- Solo POSIX (`flock`, `posix_fadvise`), como el resto del ejecutor.
+
 ## Ejecutor, bloques y pipelines
 
 - **Las ramas reales de los bloques pesados están poco ejercitadas.** Los bloques `build`, `puerta_pared_min`, `puerta_interferencia` y `puerta_imprimibilidad` tienen pruebas de contrato en modo simulado y

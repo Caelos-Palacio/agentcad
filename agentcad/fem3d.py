@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
+from . import instr
 
 def _D(E, nu):
     l = E*nu/((1+nu)*(1-2*nu)); m = E/(2*(1+nu))
@@ -38,6 +39,9 @@ def ke_unit(nu, h=1.0):
 
 class Voxel:
     def __init__(self, occ, pitch, origin, E=1900.0, nu=0.38):
+        with instr.etapa('fem_nodos', n_celdas=int(np.size(occ))) as et:
+            self._construir(occ, pitch, origin, E, nu); et.fijar(n_elem=int(self.ne), n_dof=int(3*self.nn))
+    def _construir(self, occ, pitch, origin, E, nu):
         self.occ = np.asarray(occ, bool); self.h = float(pitch); self.o = np.asarray(origin, float)
         self.E = E; self.nu = nu
         nx, ny, nz = self.occ.shape
@@ -57,32 +61,39 @@ class Voxel:
         self.Ke0 = ke_unit(nu, self.h)*1.0   # E=1
         self.Ke0 = self.Ke0  # ya incluye h^3 * (1/h)^2 = h
     def assemble(self, xe=None):
-        xe = np.ones(self.ne) if xe is None else xe
-        I = np.repeat(self.edof, 24, axis=1).ravel(); J = np.tile(self.edof, (1, 24)).ravel()
-        V = (xe[:, None]*self.E*self.Ke0.ravel()[None, :]).ravel()
-        return sp.coo_matrix((V, (I, J)), shape=(3*self.nn,)*2).tocsc()
+        with instr.etapa('fem_ensamblado', n_elem=int(self.ne), n_dof=int(3*self.nn)) as et:
+            xe = np.ones(self.ne) if xe is None else xe
+            I = np.repeat(self.edof, 24, axis=1).ravel(); J = np.tile(self.edof, (1, 24)).ravel()
+            V = (xe[:, None]*self.E*self.Ke0.ravel()[None, :]).ravel()
+            K = sp.coo_matrix((V, (I, J)), shape=(3*self.nn,)*2).tocsc(); et.fijar(nnz=int(K.nnz)); return K
     def nodes_where(self, pred):
         return np.nonzero(pred(self.xyz))[0]
     def solve(self, F, fixed_dofs, xe=None):
         K = self.assemble(xe); n = 3*self.nn
-        free = np.setdiff1d(np.arange(n), fixed_dofs)
-        # eliminar dof desconectados (diagonal ~0)
-        Kf = K[free][:, free]
-        lu = spla.splu(Kf.tocsc(), permc_spec='COLAMD')
-        u = np.zeros(n); u[free] = lu.solve(F[free])
+        with instr.etapa('fem_reduccion', n_dof=n):
+            free = np.setdiff1d(np.arange(n), fixed_dofs)
+            # eliminar dof desconectados (diagonal ~0)
+            Kf = K[free][:, free].tocsc()
+        with instr.etapa('fem_factorizacion', n_dof=int(Kf.shape[0]), nnz=int(Kf.nnz)) as et:
+            lu = spla.splu(Kf, permc_spec='COLAMD')
+            et.fijar(metodo=getattr(lu, 'metodo', 'colamd'), relleno=round(lu.nnz/max(1, Kf.nnz), 2))
+        with instr.etapa('fem_resolucion', n_dof=int(Kf.shape[0]), n_rhs=1):
+            u = np.zeros(n); u[free] = lu.solve(F[free])
         self.K = None
         return u
     def stress(self, u, xe=None):
-        D = _D(self.E, self.nu); B = _B(0, 0, 0, self.h)
-        ue = u[self.edof]; s = ue@(D@B).T
-        if xe is not None: s = s*xe[:, None]
-        return s  # sxx, syy, szz, txy, tyz, txz
+        with instr.etapa('fem_tensiones', n_elem=int(self.ne)):
+            D = _D(self.E, self.nu); B = _B(0, 0, 0, self.h)
+            ue = u[self.edof]; s = ue@(D@B).T
+            if xe is not None: s = s*xe[:, None]
+            return s  # sxx, syy, szz, txy, tyz, txz
     @staticmethod
     def vonmises(s):
         sx, sy, sz, txy, tyz, txz = s.T
         return np.sqrt(0.5*((sx-sy)**2+(sy-sz)**2+(sz-sx)**2)+3*(txy**2+tyz**2+txz**2))
     def compliance(self, F, u): return float(F@u)
 
+@instr.medida('voxelizar_triangulos', meta=lambda tris, pitch, origin, shape, axis=2: dict(n_tris=len(tris), n_celdas=int(shape[0])*int(shape[1])*int(shape[2]), paso_mm=float(pitch)))
 def voxelize_tris(tris, pitch, origin, shape, axis=2):
     """Ocupación exacta en centros de vóxel por paridad de rayos paralelos al eje `axis`.
     tris: (n,3,3) mm; origin: esquina mínima de la rejilla; shape: (nx,ny,nz)."""
@@ -122,11 +133,13 @@ def _restore(occ, ua, ub, ax):
     inv = np.argsort(perm)
     return np.transpose(occ, inv)
 
+@instr.medida('geom_cargar_malla')
 def stl_triangles(path):
     """Triángulos (n,3,3) de un STL (binario o ASCII) vía trimesh."""
     import trimesh
     return np.asarray(trimesh.load(str(path), force='mesh').triangles, float)
 
+@instr.medida('voxelizar_stl', meta=lambda path, pitch, *a, **k: dict(paso_mm=float(pitch)))
 def voxelize_stl(path, pitch, origin=None, shape=None, axis=2):
     tris = stl_triangles(path)
     lo = tris.reshape(-1, 3).min(0); hi = tris.reshape(-1, 3).max(0)

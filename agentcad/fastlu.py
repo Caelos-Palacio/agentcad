@@ -2,7 +2,7 @@
 
 `scipy.sparse.linalg.splu(..., permc_spec='COLAMD')` produce un relleno de ~24x en rejillas de vóxel 3D
 (un eslabón de 106k gdl a 1,0 mm: 106k gdl, 7,1M nnz, pico 3,1 GB). Una ordenación por disección anidada (separadores = niveles
-intermedios de BFS) reduce relleno, tiempo y memoria sin cambiar la solución (solo el orden de redondeo; ~1e-12 relativo).
+intermedios de BFS) reduce a menudo relleno, tiempo y memoria en cuerpos compactos o grandes (medido en validacion/RENDIMIENTO_LU.md; por debajo de ~15.000 gdl o en barras delgadas puede ser peor) sin cambiar la solución (solo el redondeo, <= 1e-8 relativo declarado en tests/test_fastlu.py).
 No necesita METIS ni coordenadas: sirve para cualquier K. Solo usa numpy/scipy.
 
     lu = fastlu.splu_nd(Kf)          # mismo uso que splu: lu.solve(b)
@@ -16,10 +16,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 from scipy.sparse import csgraph
-class instr:      # sin instrumentación (marcadores neutros)
-    import contextlib as _c
-    stage = staticmethod(lambda *a, **k: instr._c.nullcontext())
-    cache = staticmethod(lambda *a, **k: None)
+from . import instr
 
 LEAF = 100          # tamaño de hoja (medido en una pieza de 1,5 mm de paso: 30->10,0x, 100->10,2x, 600->11,8x, 2500->16,6x de relleno; COLAMD 12,4x)
 
@@ -82,7 +79,10 @@ def nd_order(A):
 
 class NDLU:
     """Envuelve SuperLU sobre P A P^T con ordenación natural; mismo `solve` que SuperLU."""
+    metodo = 'nd'
     def __init__(self, A, perm, lu): self.perm = perm; self._lu = lu; self.shape = A.shape
+    @property
+    def nnz(self): return self._lu.nnz
     def solve(self, b, trans='N'):
         if trans != 'N': raise NotImplementedError
         y = self._lu.solve(np.ascontiguousarray(np.asarray(b, dtype=float)[self.perm]))
@@ -107,9 +107,9 @@ def splu_nd(A, original=None):
     La permutación se reutiliza si el patrón de A es el mismo que en la llamada anterior (típico del bucle SIMP)."""
     A = sp.csc_matrix(A); A.sort_indices()
     key = _pattern_key(A); perm = _ORD_CACHE.get(key)
-    instr.cache('nd_order', perm is not None, n_dof=int(A.shape[0]))
+    instr.cache_evento('orden_nd', perm is not None, n_dof=int(A.shape[0]))
     if perm is None:
-        with instr.stage('fem_order_nd', n_dof=int(A.shape[0])):
+        with instr.etapa('fem_ordenacion_nd', n_dof=int(A.shape[0])):
             perm = nd_order(A)
         _ORD_CACHE.clear(); _ORD_CACHE[key] = perm          # solo la última: una permutación ocupa 8 B por gdl
     Ap = A[perm][:, perm].tocsc()

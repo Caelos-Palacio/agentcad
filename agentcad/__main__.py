@@ -7,6 +7,8 @@
   bloque <nombre> [--entradas J] [--raiz R] [--simulado]   ejecuta un solo bloque
   nuevo_bloque <nombre>         genera manifiesto + esqueleto + prueba de contrato (borrador, prueba roja)
   copia_simulada <dir>          crea una copia de trabajo con sim.json para ensayar pipelines
+  perfilar <pipeline> <corrida> [--raiz R] [--top N] [--json]   informe corto de tiempo/memoria/caché por paso (escribe build/perfiles/*.json y *.md)
+  perfilar <pipeline> --comparar R1 R2 [--raiz R]               cambios entre dos corridas (R puede ser también nombre:corrida)
 PARAMS: JSON literal o @fichero. Modo real: exige AGENTCAD_PERMITIR_REAL=1."""
 import argparse, json, sys
 from pathlib import Path
@@ -14,6 +16,31 @@ from pathlib import Path
 def _json(s):
     if s is None: return None
     return json.loads(Path(s[1:]).read_text()) if s.startswith('@') else json.loads(s)
+
+def _nombre_pipeline(arg):
+    """Nombre del pipeline desde un nombre, una ruta a su JSON o un pipeline incluido; si no se puede leer, el propio argumento (los diarios se nombran por `nombre`)."""
+    from . import pipeline as pl
+    try: return pl.cargar_pipeline(arg)['nombre']
+    except (OSError, ValueError, KeyError): return arg
+
+def _perfilar(a):
+    from . import config, perfil
+    raiz = a.raiz or str(config.raiz_proyecto())
+    try:
+        if a.comparar:
+            partes = []
+            for r in a.comparar:
+                n, _, c = r.partition(':')
+                partes.append((n, c) if c else (None, r))
+            nombres = {n for n, _ in partes if n}; pipe = _nombre_pipeline(a.pipeline) if a.pipeline else None
+            nombre = pipe or (nombres.pop() if len(nombres) == 1 else None)
+            if not nombre or (nombres and nombres != {nombre}): print('uso: agentcad perfilar <pipeline> --comparar R1 R2 (o --comparar nombre:R1 nombre:R2 del mismo pipeline)', file=sys.stderr); return 2
+            c, rutas = perfil.generar_comparacion(raiz, nombre, partes[0][1], partes[1][1], top=a.top)
+            print(json.dumps(dict(resumen=c['resumen'], delta_seg=c['total']['delta_seg'], ruta_json=rutas['json'], ruta_md=rutas['md']), ensure_ascii=False) if a.json else perfil.formato_texto_comparacion(c, rutas)); return 0
+        if not a.pipeline or not a.corrida: print('uso: agentcad perfilar <pipeline> <corrida>  |  agentcad perfilar <pipeline> --comparar R1 R2', file=sys.stderr); return 2
+        p, rutas = perfil.generar(raiz, _nombre_pipeline(a.pipeline), a.corrida, top=a.top)
+        print(json.dumps(perfil.resumen_compacto(p, rutas), ensure_ascii=False) if a.json else perfil.formato_texto(p, rutas)); return 0
+    except perfil.PerfilError as e: print(f'PerfilError: {e}', file=sys.stderr); return 2
 
 def main(argv=None):
     from . import bloques, config, pipeline as pl
@@ -25,6 +52,8 @@ def main(argv=None):
     p = sub.add_parser('estado'); p.add_argument('pipeline'); p.add_argument('corrida'); p.add_argument('--raiz'); p.add_argument('--json', action='store_true')
     p = sub.add_parser('bloque'); p.add_argument('nombre'); p.add_argument('--entradas', default='{}'); p.add_argument('--raiz'); p.add_argument('--simulado', action='store_true')
     sub.add_parser('nuevo_bloque').add_argument('nombre'); sub.add_parser('copia_simulada').add_argument('dir')
+    p = sub.add_parser('perfilar'); p.add_argument('pipeline', nargs='?'); p.add_argument('corrida', nargs='?'); p.add_argument('--comparar', nargs=2, metavar=('R1', 'R2')); p.add_argument('--raiz')
+    p.add_argument('--top', type=int, default=5); p.add_argument('--json', action='store_true')
     a = ap.parse_args(argv)
     if a.cmd == 'catalogo': print(bloques.catalogo()); return 0
     if a.cmd == 'ayuda':
@@ -34,6 +63,7 @@ def main(argv=None):
         from . import nuevo_bloque; print('\n'.join(nuevo_bloque.crear(a.nombre))); print('prueba de contrato en ROJO a propósito (bloque borrador): implementa y quita estado=borrador'); return 0
     if a.cmd == 'copia_simulada':
         from . import sim_fixture; r = sim_fixture.crear(a.dir); print(json.dumps(dict(raiz=r['raiz'], config=r['config'], base_g=r['base_g']))); return 0
+    if a.cmd == 'perfilar': return _perfilar(a)
     if a.cmd == 'bloque':
         ctx = dict(raiz=a.raiz or str(config.raiz_proyecto()), simulado=a.simulado)
         try: print(json.dumps(pl.ejecutar_bloque(a.nombre, _json(a.entradas), ctx), ensure_ascii=False)); return 0

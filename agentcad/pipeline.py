@@ -14,7 +14,7 @@ import json, os, re, signal, subprocess, sys, time
 from pathlib import Path
 from . import bloques, schema
 from .bloques import _base
-from . import cache, config, procedencia, unidades
+from . import cache, config, instr, procedencia, unidades
 
 ESQUEMA = json.loads((Path(__file__).resolve().parent / 'pipeline_schema.json').read_text())
 REF = re.compile(r'^\$[A-Za-z_][\w\-]*(\.[\w\-]+)*$')
@@ -202,13 +202,19 @@ class Ejecutor:
         return e
 
     def _llamar(self, mod, ent):
-        m = mod.MANIFIESTO
+        m = mod.MANIFIESTO; self._espera = 0.0; self._calculo = 0.0
         def correr():
-            if self.simulado: return (mod.simular if hasattr(mod, 'simular') else mod.ejecutar)(ent, self.ctx)
-            if m['pesado']:
-                with _base.cola(self.espera_cola): return mod.ejecutar(ent, self.ctx)
-            return mod.ejecutar(ent, self.ctx)
-        sal, self._cache = cache.con_cache(mod, ent, self.ctx, correr)
+            t1 = time.perf_counter()
+            try:
+                if self.simulado: return (mod.simular if hasattr(mod, 'simular') else mod.ejecutar)(ent, self.ctx)
+                if m['pesado']:
+                    t0 = time.perf_counter()
+                    with _base.cola(self.espera_cola) as obtenida:
+                        self._espera = (time.perf_counter() - t0) if obtenida else 0.0; t1 = time.perf_counter()      # la espera de la cola no es trabajo del bloque
+                        return mod.ejecutar(ent, self.ctx)
+                return mod.ejecutar(ent, self.ctx)
+            finally: self._calculo = time.perf_counter() - t1
+        sal, self._cache, self._cache_info = cache.con_cache_info(mod, ent, self.ctx, correr, seg=lambda: self._calculo)
         return sal
 
     def _paso(self, st, vars_, clave, top):
@@ -217,19 +223,34 @@ class Ejecutor:
         if 'si' in st and not _verdad(st['si'], vars_):
             self.d['pasos'][clave] = dict(base, estado='omitido', salidas={}); self.guardar(); return True, {}
         mod = bloques.cargar()[st['bloque']]; fl = st.get('en_fallo'); mx = (fl.get('max', 1) if isinstance(fl, dict) and fl['accion'] == 'reintentar' else 1 if fl == 'reintentar' else 0)
-        n = 0
+        n = 0; previos = 0.0
         while True:
-            t0 = time.time(); ent = None; self._cache = None
+            t0 = time.time(); ent = None; self._cache = None; self._cache_info = {}; self._espera = 0.0
             self.d['pasos'][clave] = dict(base, estado='corriendo'); self.guardar()
-            try:
-                ent = self._entradas(st, vars_); sal = self._llamar(mod, ent); _comprobar_salidas(mod.MANIFIESTO, sal); ok = sal.get('ok', True) is not False
-            except Exception as ex:
-                sal, ok = {'error': f'{type(ex).__name__}: {str(ex)[:300]}'}, False
-            self.d['pasos'][clave] = dict(base, estado='ok' if ok else 'fallo', entradas=_resumen(ent or {}), salidas=sal, segundos=round(time.time() - t0, 2), **({'cache': self._cache} if self._cache else {}),
-                                         procedencia=dict(bloque_sha256=cache.huella_codigo(mod), entradas_sha256=cache.sha256_bytes(cache._canon(ent or {}).encode()), agentcad=procedencia.__version__))
+            with instr.medir_paso(top=6) as med:
+                try:
+                    ent = self._entradas(st, vars_); sal = self._llamar(mod, ent); _comprobar_salidas(mod.MANIFIESTO, sal); ok = sal.get('ok', True) is not False
+                except Exception as ex:
+                    sal, ok = {'error': f'{type(ex).__name__}: {str(ex)[:300]}'}, False
+            reg = dict(base, estado='ok' if ok else 'fallo', entradas=_resumen(ent or {}), salidas=sal, segundos=round(time.time() - t0, 2), **({'cache': self._cache} if self._cache else {}),
+                       procedencia=dict(bloque_sha256=cache.huella_codigo(mod), entradas_sha256=cache.sha256_bytes(cache._canon(ent or {}).encode()), agentcad=procedencia.__version__))
+            pf = med.perfil
+            if pf is not None:         # perfil del paso (agentcad/instr.py); con la instrumentación desactivada el diario queda como en 0.3.0
+                if self._espera: pf['espera_cola_s'] = round(self._espera, 4)
+                if self._cache == 'acierto' and self._cache_info.get('seg_calculo') is not None: pf['seg_ahorrados'] = self._cache_info['seg_calculo']
+                pf['intentos'] = n + 1
+                if previos: pf['seg_reintentos'] = round(previos, 4)
+                previos += max(0.0, pf['seg'] - pf.get('espera_cola_s', 0.0)); reg['perfil'] = pf
+            self.d['pasos'][clave] = reg
             self.log(f"{clave} ({st['bloque']}): {'ok' if ok else 'FALLO'} {json.dumps(_resumen(sal, 120), ensure_ascii=False, default=str)}")
             if ok or n >= mx: return ok, sal
             n += 1; self.log(f'{clave}: reintento {n}/{mx}')
+
+    def _descartar(self, st):
+        """Contabiliza el tiempo de un paso que un rollback tira (la corrida lo pagó aunque ya no figure en los pasos)."""
+        pf = (st or {}).get('perfil')
+        if pf:
+            pc = self.d.setdefault('perfil_corrida', {}); pc['descartado_seg'] = round(pc.get('descartado_seg', 0.0) + max(0.0, pf['seg'] - pf.get('espera_cola_s', 0.0)), 4); pc['descartados'] = pc.get('descartados', 0) + 1
 
     def _rollback(self, fl, st_fallido, clave, vars_, plano, sal):
         """Aplica deshacer() del paso indicado, deja sus salidas actualizadas y devuelve el índice desde el que repetir."""
@@ -239,7 +260,7 @@ class Ejecutor:
         nuevo = {**prev, **{k: v for k, v in res.items() if k in mod.MANIFIESTO['salidas']}}
         j = next(i for i, s in enumerate(plano) if s['id'] == fl['repetir_desde'])
         idx = {s['id']: i for i, s in enumerate(plano)}
-        for k in [k for k, p in self.d['pasos'].items() if idx.get(p.get('top', k), idx.get(k, -1)) >= j and k != fl['paso']]: self.d['pasos'].pop(k, None)
+        for k in [k for k, p in self.d['pasos'].items() if idx.get(p.get('top', k), idx.get(k, -1)) >= j and k != fl['paso']]: self._descartar(self.d['pasos'].pop(k, None))
         self.d['pasos'][fl['paso']] = dict(self.d['pasos'].get(fl['paso'], dict(bloque=tgt['bloque'], top=fl['paso'])), estado='ok', salidas=nuevo)
         self.vars[fl['paso']] = nuevo; self.d['rollbacks'] += 1
         self.d['rollback_piezas'].append(dict(pieza=str(over.get('pieza', over or 'todas')), motivo=clave, salida=_resumen(sal, 120)))
@@ -253,6 +274,13 @@ class Ejecutor:
             else: yield s
 
     def correr(self):
+        instr.cargar_config(self.raiz); t0 = time.perf_counter()
+        try: return self._correr()
+        finally:
+            if instr.activa() and self.d.get('estado') not in (None, 'nuevo'):        # pared acumulada de las llamadas a correr() (sin contar validación fallida); se suma al reanudar
+                pc = self.d.setdefault('perfil_corrida', {}); pc['seg_correr'] = round(pc.get('seg_correr', 0.0) + time.perf_counter() - t0, 4); self.guardar()
+
+    def _correr(self):
         errs = validar(self.pipe, self.d['params'])
         if errs: raise PipelineError('; '.join(errs))
         if not self.simulado and (self.raiz.resolve() != config.raiz_proyecto() or os.environ.get('AGENTCAD_PERMITIR_REAL') != '1'):

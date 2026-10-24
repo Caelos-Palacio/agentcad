@@ -3,13 +3,14 @@ Poses, pares exentos, categorías excluidas y umbral se declaran en agentcad.tom
 import json
 from pathlib import Path
 import numpy as np
-from . import config, geom
+from . import config, geom, instr
 from .geom import ErrorHerramienta, r4
 import fnmatch
 axis_rotation = geom.rotacion_eje
 
 UMBRAL_MM3 = 0.1      # umbral por defecto; configurable en [interferencia].umbral_mm3
 
+@instr.medida('interferencia_booleana')
 def volumen_interferencia(a, b):
     """Volumen (mm3) de la intersección de dos Manifold."""
     return abs(float((a ^ b).volume()))

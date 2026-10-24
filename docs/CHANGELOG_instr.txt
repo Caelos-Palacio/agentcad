@@ -1,0 +1,14 @@
+## 0.4.0 (parte instrumentación y perfilado; resumen para integrar en CHANGELOG.md)
+
+Instrumentación y perfilado (todo digital; tiempos y memoria de la máquina donde corre):
+- **`agentcad/instr.py`**: etapas genéricas (`instr.etapa`, `@instr.medida`, `instr.cache_evento`) con tiempo de pared/CPU, RSS inicial/pico/final (muestreo, básica o tracemalloc), tiempo exclusivo, hilos y procesos hijos;
+  sin dependencias nuevas; desactivable con `[instrumentacion] activa=false` o `AGENTCAD_INSTR=0`. Sobrecoste: 0,26 us por etapa desactivada, ~26 us activa; < 0,01 % en el FEM y la imprimibilidad medidos, ~0,12 ms por paso de pipeline (<= 0,9 % en corridas simuladas de 0,7 s) (docs/instrumentacion.md).
+- **Diario de pipelines**: cada paso lleva `perfil` (pared, CPU propia y de hijos, RSS, espera de cola `flock` separada del trabajo, etapas internas, intentos, `seg_ahorrados` en aciertos de caché); la corrida lleva `perfil_corrida`.
+  La caché guarda los segundos de cálculo (`cache.con_cache_info`; `con_cache` conserva su firma).
+- **`agentcad perfilar <pipeline> <corrida>`** (tabla corta, cuellos de botella, % por bloque, etapas, caché; JSON y Markdown en `build/perfiles/`) y **`agentcad perfilar <pipeline> --comparar R1 R2`** (deltas por paso y etapa, causa probable: bloque, entradas o caché).
+- **Bloque `perfilar_pipeline`** (ligero, cacheable; unidades nuevas `MiB`, `GiB`): 11 a 12 bloques; catálogo de 2759 a 3074 caracteres (843 a 938 tokens con tiktoken, +94; 788 a 878 a 3,5 car./token).
+- Etapas en el FEM (`fem_*`, `voxelizar_*`), la imprimibilidad, la interferencia y la carga de mallas.
+- **fastlu (disección anidada)**: ya estaba portado; ahora con instrumentación, `tests/test_fastlu.py` (equivalencia con COLAMD: 1e-8 relativo declarado) y `validacion/rendimiento_lu.py`: -34 % a -71 % de tiempo de factorización y -19 % a -33 % de RSS pico por encima de ~25.000 gdl; peor por debajo de ~15.000 gdl; depende de la geometría.
+- Pipeline de ejemplo `revisar_pieza_perfilado`; docs `instrumentacion.md` y `perfilar_proyecto.md`.
+- Config nueva: sección `[instrumentacion]` (DEFECTOS en config.py). Unidades nuevas: `MiB`, `GiB`.
+Pendiente: el pipeline `placas_a_gcode` perfilado (depende de los bloques del laminado).

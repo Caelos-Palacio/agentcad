@@ -36,31 +36,44 @@ def clave(mod, entradas, ctx):
 
 def _ruta(mod, k, ctx): return _raiz(ctx) / 'build' / 'cache' / mod.MANIFIESTO['nombre'] / f'{k}.json'
 
-def buscar(mod, k, ctx):
-    """Salidas guardadas con clave `k`, o None. Un bloque cuyas salidas son RUTAS a ficheros puede declarar `cache_valida(salidas, ctx) -> bool`:
-    si devuelve False (p. ej. el gcode o el PNG ya no existe) el acierto se descarta y se recalcula."""
+def buscar_entrada(mod, k, ctx):
+    """Entrada completa guardada (dict con salidas, creado, segundos...) o None. Un bloque cuyas salidas son RUTAS a ficheros puede declarar
+    `cache_valida(salidas, ctx) -> bool`: si devuelve False (p. ej. el gcode o el PNG ya no existe) el acierto se descarta y se recalcula."""
     f = _ruta(mod, k, ctx)
-    try: sal = json.loads(f.read_text())['salidas']
-    except (OSError, ValueError, KeyError): return None
+    try:
+        e = json.loads(f.read_text()); sal = e['salidas']
+    except (OSError, ValueError, KeyError, TypeError): return None
     valida = getattr(mod, 'cache_valida', None)
     if valida is not None:
         try:
             if not valida(sal, ctx): return None
         except Exception: return None
-    return sal
+    return e
 
-def guardar(mod, k, entradas, salidas, ctx):
+def buscar(mod, k, ctx):
+    e = buscar_entrada(mod, k, ctx); return None if e is None else e['salidas']
+
+def guardar(mod, k, entradas, salidas, ctx, segundos=None):
+    """Guarda la entrada. `segundos`: tiempo de cálculo medido al crearla (solo informativo: permite estimar el ahorro de un acierto; no entra en la clave)."""
     f = _ruta(mod, k, ctx); f.parent.mkdir(parents=True, exist_ok=True); tmp = f.with_suffix('.tmp')
-    tmp.write_text(json.dumps(dict(bloque=mod.MANIFIESTO['nombre'], clave=k, entradas=entradas, salidas=salidas, huella=huella_datos(mod, entradas, ctx),
-                                   creado=time.strftime('%Y-%m-%dT%H:%M:%S')), ensure_ascii=False, indent=1, default=str))
+    cuerpo = dict(bloque=mod.MANIFIESTO['nombre'], clave=k, entradas=entradas, salidas=salidas, huella=huella_datos(mod, entradas, ctx), creado=time.strftime('%Y-%m-%dT%H:%M:%S'))
+    if segundos is not None: cuerpo['segundos'] = round(float(segundos), 4)
+    tmp.write_text(json.dumps(cuerpo, ensure_ascii=False, indent=1, default=str))
     os.replace(tmp, f)
+
+def con_cache_info(mod, entradas, ctx, llamar, seg=None):
+    """Como `con_cache`, pero devuelve (salidas, estado, info). info = {clave (12 hex), seg_calculo}: los segundos de cálculo de la entrada (medidos ahora si fue un fallo; leídos de la
+    entrada si fue un acierto; None si la entrada es anterior a 0.4.0). `seg`: función opcional que da los segundos de cálculo (por defecto, la pared de `llamar`; el ejecutor
+    descuenta la espera de la cola)."""
+    if not habilitada(mod): return llamar(), None, {}
+    k = clave(mod, entradas, ctx); hit = buscar_entrada(mod, k, ctx)
+    if hit is not None: return hit['salidas'], 'acierto', dict(clave=k[:12], seg_calculo=hit.get('segundos'))
+    t0 = time.perf_counter(); sal = llamar(); s = seg() if seg else time.perf_counter() - t0
+    guardar(mod, k, entradas, sal, ctx, segundos=s); return sal, 'fallo', dict(clave=k[:12], seg_calculo=round(s, 4))
 
 def con_cache(mod, entradas, ctx, llamar):
     """Ejecuta `llamar()` con caché. Devuelve (salidas, estado) con estado 'acierto' | 'fallo' | None (bloque no cacheable o caché desactivada)."""
-    if not habilitada(mod): return llamar(), None
-    k = clave(mod, entradas, ctx); hit = buscar(mod, k, ctx)
-    if hit is not None: return hit, 'acierto'
-    sal = llamar(); guardar(mod, k, entradas, sal, ctx); return sal, 'fallo'
+    sal, estado, _ = con_cache_info(mod, entradas, ctx, llamar); return sal, estado
 
 def limpiar(raiz=None):
     import shutil

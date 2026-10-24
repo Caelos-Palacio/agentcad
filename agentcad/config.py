@@ -28,6 +28,7 @@ DEFECTOS = dict(
     gcode=dict(perfil='', celda_mm=0.2, perfiles={}),   # check_gcode: perfiles de máquina (cama_x_mm, cama_y_mm, z_max_mm, límites); ver README
     calibracion=dict(perfil='', perfiles={}),             # estimar_impresion: razón y error declarados (agentcad.calibracion)
     estructura={},                                    # pieza -> modelo de carga (ver structure.py)
+    instrumentacion=dict(activa=True, memoria='muestreo', intervalo_ms=50),   # agentcad.instr: tiempo/memoria por etapa y paso de pipeline (ver docs/instrumentacion.md)
 )
 
 def _mezclar(base, extra):

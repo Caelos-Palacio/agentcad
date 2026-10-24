@@ -1,0 +1,43 @@
+{
+ "micro_us_por_etapa": {
+  "desactivada": 0.26,
+  "memoria=no": 9.08,
+  "memoria=basica": 16.34,
+  "memoria=muestreo": 25.91,
+  "memoria=tracemalloc": 36.88,
+  "medir_paso (por paso de pipeline)": 117.6,
+  "bucle_vacio": 11.758
+ },
+ "macro": {
+  "fem": {
+   "reps": 15,
+   "mediana_desactivada_s": 1.8591,
+   "mediana_activa_s": 1.9482,
+   "sobrecoste_pct": 4.8,
+   "ruido_iqr_desactivada_pct": 74.32,
+   "minimo_desactivada_s": 1.0812,
+   "minimo_activa_s": 0.9737,
+   "sobrecoste_minimos_pct": -9.94
+  },
+  "imprimibilidad": {
+   "reps": 15,
+   "mediana_desactivada_s": 2.5004,
+   "mediana_activa_s": 2.4939,
+   "sobrecoste_pct": -0.26,
+   "ruido_iqr_desactivada_pct": 8.14,
+   "minimo_desactivada_s": 2.1232,
+   "minimo_activa_s": 2.1869,
+   "sobrecoste_minimos_pct": 3.0
+  },
+  "pipeline": {
+   "reps": 15,
+   "mediana_desactivada_s": 0.7424,
+   "mediana_activa_s": 0.7588,
+   "sobrecoste_pct": 2.2,
+   "ruido_iqr_desactivada_pct": 15.53,
+   "minimo_desactivada_s": 0.634,
+   "minimo_activa_s": 0.635,
+   "sobrecoste_minimos_pct": 0.16
+  }
+ }
+}

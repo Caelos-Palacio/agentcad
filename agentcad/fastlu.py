@@ -2,7 +2,7 @@
 
 `scipy.sparse.linalg.splu(..., permc_spec='COLAMD')` produce un relleno de ~24x en rejillas de vóxel 3D
 (un eslabón de 106k gdl a 1,0 mm: 106k gdl, 7,1M nnz, pico 3,1 GB). Una ordenación por disección anidada (separadores = niveles
-intermedios de BFS) reduce relleno, tiempo y memoria sin cambiar la solución (solo el orden de redondeo; ~1e-12 relativo).
+intermedios de BFS) reduce a menudo relleno, tiempo y memoria en cuerpos compactos o grandes (medido en validacion/RENDIMIENTO_LU.md; por debajo de ~15.000 gdl o en barras delgadas puede ser peor) sin cambiar la solución (solo el redondeo, <= 1e-8 relativo declarado en tests/test_fastlu.py).
 No necesita METIS ni coordenadas: sirve para cualquier K. Solo usa numpy/scipy.
 
     lu = fastlu.splu_nd(Kf)          # mismo uso que splu: lu.solve(b)

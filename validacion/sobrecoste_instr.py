@@ -25,6 +25,10 @@ def micro(n=20000):
         out[nombre] = round((time.perf_counter() - t) / m * 1e6, 2)
     t = time.perf_counter()
     for _ in range(n): pass
+    instr.restablecer(); instr.configurar(activa=True, memoria='muestreo'); m = 2000; t = time.perf_counter()
+    for _ in range(m):
+        with instr.medir_paso(): pass
+    out['medir_paso (por paso de pipeline)'] = round((time.perf_counter() - t) / m * 1e6, 1)
     out['bucle_vacio'] = round((time.perf_counter() - t) / n * 1e6, 3); instr.restablecer(); return out
 
 CODIGOS = {
@@ -34,7 +38,7 @@ CODIGOS = {
 
 def una_vez(carga, instr_on, ejemplo):
     env = {k: v for k, v in os.environ.items() if not k.startswith('AGENTCAD_INSTR')}; env.update(AGENTCAD_INSTR='1' if instr_on else '0', PYTHONPATH=str(RAIZ), AGENTCAD_FASTLU='1', AGENTCAD_LOCK_HELD='1')
-    codigo = {'fem': CODIGOS['fem'], 'imprimibilidad': CODIGOS['imprimibilidad'] % str(ejemplo), 'pipeline': PIPELINE % str(ejemplo)}[carga]
+    codigo = CODIGOS['imprimibilidad'] % str(ejemplo) if carga == 'imprimibilidad' else CODIGOS[carga] if carga == 'fem' else PIPELINE
     t = time.perf_counter(); r = subprocess.run([sys.executable, '-W', 'ignore', '-c', f'import time; t=time.perf_counter()\n{codigo}\nprint(time.perf_counter()-t)'], capture_output=True, text=True, env=env, cwd=str(RAIZ if carga == 'fem' else '/tmp'), timeout=900)
     if r.returncode: raise RuntimeError(r.stderr[-500:])
     return float(r.stdout.strip().splitlines()[-1])           # tiempo de la carga (sin el arranque del intérprete ni los imports)

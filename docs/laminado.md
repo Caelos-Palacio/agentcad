@@ -91,7 +91,7 @@ En modo simulado `check_gcode` devuelve cifras sintéticas (convención de agent
 
 La prueba `tests.bloques.test_laminar.Real` es **opcional** y está marcada (se omite sin laminador): 
 `AGENTCAD_LAMINADOR_REAL=~/Applications/anycubic-slicer flock <cola> python -m unittest tests.bloques.test_laminar.Real`. Laminó con Anycubic Slicer Next 2.0.0.5 (Kobra 3, PETG) una placa de dos cubos de 20 mm:
-40 capas, 10 min, 3,7 g, dos objetos, copia del datadir borrada. Lo que no cubre: soportes en un caso real (ver `LIMITACIONES.md`).
+40 capas, 10 min, 3,7 g, dos objetos, copia del datadir borrada. Lo que no cubre: soportes en un caso real (ver `LIMITACIONES.es.md`).
 
 ## `render_gcode` y `render_stl`
 

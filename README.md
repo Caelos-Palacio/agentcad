@@ -1,116 +1,112 @@
 # agentcad
 
-**Una capa de verificación determinista para que agentes de IA organicen, analicen, entiendan y prueben diseños 3D (OpenSCAD/STL) frente a especificaciones, y los optimicen y cambien con código.**
+**Deterministic design checks that let an AI agent edit a 3D-printable part, measure the result by code (never by guess), and be told no.**
 
-> **English summary.** agentcad is a *layer on top of* whatever orchestrator or solver you already use (Snakemake, LangGraph, Airflow, MCP clients, plain scripts). It gives AI agents
-> structured, deterministic tools for 3D-printable designs: `describe_part`, `check_interference`, `check_printability`, `evaluate_structure` (returns `no_validado` when there is no load model),
-> `apply_hex_lightening`, `check_spec` (spec-as-code, JSON Schema), plus a compact catalog of composable *blocks* (unos 600 tokens), declarative JSON pipelines (`si` / `para_cada` / `en_fallo` / rollback),
-> an executor with dry-run validation, run journal, resume and a simulated mode. Central principle: **a digital result is never labelled as physical.** Everything here is digital verification;
-> nothing replaces printing, assembling and testing the part. Alpha (0.3.0), Spanish-language docs and messages. MIT licence. See `LIMITACIONES.md` for the honest list of known defects.
+**Español:** [README.es.md](README.es.md)
 
-## Por qué
+![agentcad running a wall check and an agent lightening a plate](docs/media/demo.gif)
 
-Un agente que modifica un diseño necesita comprobarlo en el bucle, y necesita que la comprobación sea **repetible, barata en tokens y honesta**:
+<sub>Real output from `ejemplos/soporte_simple`, abridged. Regenerate the GIF with `python docs/media/demo.py`.</sub>
 
-- Las herramientas devuelven **solo valores medidos por código** (JSON estructurado con esquema de entrada y de salida), nunca una estimación del modelo de lenguaje.
-- Si no hay un modelo de carga declarado, la respuesta es `no_validado` **sin cifras**; una cifra inventada es peor que ninguna.
-- Un resultado es `digital` siempre. Solo un ensayo medido y completo, aportado por una persona, lo marca como `fisico`.
-- Los cambios de diseño se componen con **bloques** pequeños y tipados, con puertas que dicen sí/no y rollback por pieza, y todo queda en un diario y en un registro encadenado por hash.
+[![tests](https://github.com/Caelos-Palacio/agentcad/actions/workflows/tests.yml/badge.svg)](https://github.com/Caelos-Palacio/agentcad/actions/workflows/tests.yml)
+![python](https://img.shields.io/badge/python-%E2%89%A53.12-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![status](https://img.shields.io/badge/status-alpha%200.3.0-orange)
 
-## Qué hay
+> **A note on language.** The API is in Spanish: block names (`puerta_pared_min` = "min-wall gate"), JSON field names, verdicts (`cumple` = passes, `no_cumple` = fails, `no_validado` = not validated, `no_evaluable` = cannot be evaluated), and CLI commands (`catalogo`, `validar`, `ejecutar`...). The MCP tool names are English. Both are stable and are glossed below.
 
-| Capa | Contenido |
-|---|---|
-| Herramientas (MCP/CLI/Python) | `describe_part`, `check_interference`, `check_printability`, `evaluate_structure`, `apply_hex_lightening`, `check_spec`, `record_result`, `verify_registro` |
-| Spec-as-code | `agentcad/spec_schema.json` (JSON Schema), `check_spec_file`, pruebas derivadas de cada spec (`python -m agentcad.spec_tests`) |
-| Bloques | 16 bloques componibles con `MANIFIESTO` tipado y catálogo de una línea por bloque |
-| Pipelines | JSON declarativo, dry-run (`validar`), ejecución con diario/checkpoints/reanudación, modo simulado |
-| Metodología | SDD, TDD y BDD en español (`docs/SDD.md`, escenarios Gherkin con ejecutor propio), medidor de cobertura propio |
+## Why
 
-## Instalación
+An agent that changes a design needs to check it inside its loop, and the check must be **repeatable, cheap in tokens, and honest**:
 
-Requiere Python >= 3.12 (probado con 3.14) y estas dependencias, que `pip` instalará: numpy, scipy, trimesh, manifold3d, python-fcl, matplotlib y pillow. OpenSCAD es **opcional**.
+- Tools return **only values measured by code**: structured JSON with input and output schemas, never a language-model estimate.
+- If no load model is declared, the answer is `no_validado` **with no numbers**. An invented figure is worse than none.
+- A result is `digital` (`nivel_validacion: "digital"`), always. Only a complete measured test, supplied by a person, can mark it `fisico`. Nothing here replaces printing, assembling and testing the part.
+- Design changes are composed from small typed **blocks** with yes/no gates and per-part rollback; everything lands in a run journal and a hash-chained log.
+
+agentcad is a layer on top of whatever orchestrator or solver you already use (Snakemake, LangGraph, Airflow, MCP clients, plain scripts), not a replacement for them.
+
+## Quick start
+
+Requires Python >= 3.12 (tested on 3.12, 3.13 and 3.14). OpenSCAD is **optional**: the bundled example generates its STL files with manifold3d. POSIX only (it uses `flock`).
 
 ```bash
 git clone https://github.com/Caelos-Palacio/agentcad && cd agentcad
 python -m venv .venv && . .venv/bin/activate
 python -m pip install -e .
-```
+cd ejemplos/soporte_simple        # a 60x40x3 mm plate with 4 holes, pillars and hex windows, plus a neighbouring block
 
-Sin instalar nada (por ejemplo, con un venv que ya tenga las dependencias): `PYTHONPATH=<ruta al repo> python -m agentcad ...`.
-
-## Inicio rápido (con el ejemplo incluido)
-
-`ejemplos/soporte_simple/` es un proyecto autocontenido: una placa de 60x40x3 mm con 4 taladros, pilares y ventanas hexagonales, y un bloque vecino. Los STL se generan con
-manifold3d (`generar_stl.py`); no hace falta OpenSCAD. Su `agentcad.toml` declara rutas, perfil de impresión, poses y un modelo de carga.
-
-```bash
-cd ejemplos/soporte_simple
-
-agentcad catalogo                                              # lo único que un agente debe leer: una línea por bloque
-agentcad ayuda puerta_pared_min                                # contrato completo de un bloque
+agentcad catalogo                 # the only thing an agent must read: one line per block (~2.8 kB)
 agentcad bloque puerta_pared_min --entradas '{"pieza":"placa_soporte"}'
-# {"ok": true, "pared_min_mm": 1.4736, "veredicto": "cumple"}
+# {"ok": true, "pared_min_mm": 1.4736, "veredicto": "cumple", "preexistente": false, "vertical_no_resuelto": false}
 
-agentcad validar revisar_pieza --params '{"pieza":"placa_soporte"}'      # dry-run: esquema, tipos, encaje salidas->entradas
+agentcad validar revisar_pieza --params '{"pieza":"placa_soporte"}'      # dry run: schema, types, output->input wiring
 AGENTCAD_PERMITIR_REAL=1 agentcad ejecutar revisar_pieza \
-    --params '{"pieza":"placa_soporte"}' --corrida demo --real --primer-plano   # build + puertas + informe
-agentcad estado revisar_pieza demo
+    --params '{"pieza":"placa_soporte"}' --corrida demo --real --primer-plano   # build + gates + report
+agentcad estado revisar_pieza demo        # revisar_pieza#demo ok pasos_ok=5 ...
 
-python -m agentcad.demo_agente                                 # un «agente» (guion sin LLM) aligera la placa usando solo las herramientas MCP
+python -m agentcad.demo_agente    # a scripted "agent" (no LLM) lightens the plate using only the MCP tools
 ```
 
-Las herramientas también se pueden llamar desde Python:
+The tools are also plain Python functions returning JSON-serializable dicts (run from `ejemplos/soporte_simple`):
 
 ```python
 from agentcad import describe, interference, printability, structure
-describe.describe_part('placa_soporte')            # bbox, volumen, masa estimada, agujeros, vecinas...
-interference.check_interference('placa_soporte', pose='girado')    # veredicto: 'interfiere' con 13,8 mm3 frente al bloque vecino
-printability.check_printability('placa_soporte')   # pared mínima, voladizos, islas, puentes
-structure.evaluate_structure('placa_soporte', fidelity=0.8)        # margen según el modelo declarado; 'no_validado' si no lo hay
+describe.describe_part('placa_soporte')                          # bbox, volume, estimated mass, holes, neighbours...
+interference.check_interference('placa_soporte', pose='girado')  # 'interfiere' (interferes): 13.8 mm3 against the neighbouring block
+printability.check_printability('placa_soporte')                 # min wall, overhangs, islands, bridges
+structure.evaluate_structure('placa_soporte', fidelity=0.8)      # margin from the declared load model; 'no_validado' if none
 ```
 
-## Configuración del proyecto: `agentcad.toml`
+To use it with an MCP client (for example Claude Code), run from your project root: `claude mcp add agentcad -- python -m agentcad.server`.
 
-agentcad no conoce tu diseño: lo describes en un archivo `agentcad.toml` en la raíz de tu proyecto (o `AGENTCAD_PROYECTO=<ruta>`). Todo es opcional y tiene un defecto. Ver el del ejemplo,
-que está comentado. Secciones: `[rutas]` (carpetas de STL, ensamblaje, specs, registro, trabajo, params), `[bases]` (líneas base: `part = "linea_base:placa"`), `[build]` (comando argv),
-`[material]`, `[impresion.<pieza>]` (walls, infill, rot, support, support_regiones, layer), `[poses.<nombre>]`, `[interferencia]` (exentos, categorías excluidas), `[respaldo]`, `[estructura.<pieza>]` (modelo de carga).
-Variables de entorno: `AGENTCAD_LOCK` (cola de tareas pesadas; por defecto `~/.cache/agentcad/heavy.lock`), `AGENTCAD_PYTHON`, `AGENTCAD_REGISTRO_DIR`, `AGENTCAD_TRABAJO_DIR`.
+## Features
 
-El **ensamblaje** (`assembly.json`) es un JSON: `parts: [{id, file, matrix (4x4 en columnas), group, category, printable}]` y `joints: [{id, pivot, axis, groups|parts}]`; las rutas `file` son relativas a la raíz.
+| Layer | What is in it |
+|---|---|
+| Tools (MCP / CLI / Python) | `describe_part`, `check_interference`, `check_printability`, `evaluate_structure`, `apply_hex_lightening`, `check_spec`, `record_result`, `verify_registro` |
+| Spec-as-code | `agentcad/spec_schema.json` (JSON Schema), `check_spec_file`, tests derived from each spec (`python -m agentcad.spec_tests`). See [`docs/SDD.md`](docs/SDD.md) (Spanish) |
+| Blocks | 11 composable blocks with a typed `MANIFIESTO` (manifest) and a one-line catalog entry each |
+| Pipelines | Declarative JSON, dry run (`validar`), execution with journal / checkpoints / resume, simulated mode |
+| Slicing | `check_gcode` (G-code analysis), `estimar_impresion` (filament and time from a declared calibration), comparison against a real slicer |
+| Method | SDD, TDD and BDD (Gherkin scenarios with a bundled runner), a bundled coverage meter |
 
-## Catálogo de bloques
+What the tools do:
+
+| Tool | Does |
+|---|---|
+| `describe_part` | Bounding box, volume, estimated mass, holes, components, neighbouring parts |
+| `check_interference` | Volume overlap between a part and its neighbours in a named pose |
+| `check_printability` | Minimum wall (as a thin-material volume with severity), overhangs, islands, bridges, for a print profile |
+| `evaluate_structure` | Voxel FEM margin and deflection for a declared load model; `no_validado` without one, and it reports the measured solver error at the chosen resolution |
+| `apply_hex_lightening` | Hexagonal windows in a flat plate, written to a copy (originals are untouched) |
+| `check_spec` | Verifies a part against its JSON spec: `cumple` / `no_cumple` / `no_evaluable` per requirement, with margin and units |
+| `record_result`, `verify_registro` | Append to / verify the hash-chained JSONL log (the only way a result becomes `fisico`) |
+
+### Block catalog (`agentcad catalogo`, abridged)
 
 ```
-$ agentcad catalogo
-# bloque [P pesado, D deshacible, C cacheable] entradas(?=opcional) -> salidas | descripción
-aplicar_params [D] config:str pieza:str? -> piezas_activas:arr anteriores:obj | Fija en params.scad los parámetros y el flag de cada pieza elegida (JSON de configuración) y ejecuta sus emisores.
-backup [D] etiqueta:str -> ruta:str ya_existia:bool | Copia parámetros, ensamblaje, STL y los archivos de [respaldo] a build/backup_<etiqueta>/ (idempotente).
-build [P] - -> ok:bool masa_g:num[g] log:str | Ejecuta el comando [build] de agentcad.toml bajo flock y devuelve la masa estimada del conjunto.
-check_gcode [PC] archivo:str perfil:str? guardar:bool? -> ok:bool errores:int avisos:int capas:int islas:int puentes_largos:int voladizos:int soportes_sin_cama:int fuera_de_cama:int caudal_max:num[mm3/s] z_max:num[mm] masa_g:num[g] mensajes:arr detalle:str | Analiza un gcode: islas flotantes, puentes, voladizos, soportes sin cama, límites de cama/Z, temperaturas, caudal, inicio/fin.
-estimar_impresion [C] masa_g:num[g] perfil:str? -> filamento_g:num[g] filamento_min_g:num[g] filamento_max_g:num[g] tiempo_h:num[h] tiempo_min_h:num[h] tiempo_max_h:num[h] fiable:bool nota:str | Estima filamento y tiempo de impresión desde la masa del CAD con una calibración declarada y su error; sin calibración no da cifras.
-exportar_copia [D] archivos:arr destino:str subcarpeta:str? -> ok:bool copiados:int ya_estaban:int verificados:int tamano_mb:num necesario_mb:num libre_antes_mb:num libre_despues_mb:num destino:str registro:str conflictos:arr mensaje:str | Copia archivos o directorios a un destino ya montado (p. ej. un USB), verifica cada copia byte a byte y deshace solo lo copiado; nunca formatea ni desmonta.
-informe [-] etiqueta:str diario:str filas:arr? extra:arr? -> ruta:str incumplimientos:int revertidas:arr | Escribe build/INFORME_<etiqueta>.md desde el diario del pipeline: pasos, puertas por pieza, rollbacks, incumplimientos conocidos y digital vs físico.
-laminar [PC] placa:str ajustes:obj? perfil:str? salida:str? -> ok:bool gcode:str manifiesto:str tiempo_min:num[min] filamento_g:num[g] capas:int objetos:int intentos:int simulado:bool diagnostico:str | Lamina una placa STL/3MF con un laminador de línea de comandos (Orca/Anycubic): ruta del gcode, resumen corto (tiempo, filamento, capas) y manifiesto con unidades.
-perfilar_pipeline [C] pipeline:str corrida:str top:int? -> ok:bool total_s:num[s] rss_pico_mib:num[MiB] cuello_paso:str cuello_fraccion:num[fraccion] resumen:str ruta_json:str ruta_md:str | Perfila una corrida de pipeline: tiempo, memoria pico y caché por paso, cuello de botella y rutas del informe JSON/Markdown.
-puerta_imprimibilidad [PC] pieza:str base:str? -> ok:bool nuevos_fallos:arr estado:str | Puerta: la pieza no incumple ningún criterio de imprimibilidad que la línea base sí cumpla (pared, voladizos, islas, puentes).
-puerta_interferencia [PC] pieza:str pose:str? conocido_mm3:num[mm3]? -> ok:bool volumen_mm3:num[mm3] estado:str | Puerta: la pieza no interfiere (> 0,1 mm3) con sus vecinas, salvo el volumen conocido declarado (agentcad.check_interference).
-puerta_margen_fem [C] config:str pieza:str -> ok:bool base:num[adimensional] candidato:num[adimensional] incumple_criterio:bool estado:str nota:str | Puerta: el margen FEM de la pieza no es peor que el de la línea base a igual malla; marca el incumplimiento conocido si queda bajo el criterio.
-puerta_masa [-] base_g:num[g] tolerancia_g:num[g]? -> ok:bool masa_g:num[g] delta_g:num[g] | Puerta: la masa estimada del conjunto no supera la de la revisión base (+ tolerancia).
-puerta_pared_min [PC] pieza:str umbral_mm:num[mm]? base:str? -> ok:bool pared_min_mm:num[mm] veredicto:str preexistente:bool vertical_no_resuelto:bool | Puerta: pared mínima imprimible >= umbral, o no peor que la línea base si esta ya incumplía (check_printability).
-render_gcode [C] archivo:str salida:str? vistas:str? submuestreo:int? max_segmentos:int? -> ok:bool png:str segmentos:int dibujados:int submuestreo:int capas:int tipos:obj ancho_px:int alto_px:int mensaje:str | Dibuja un gcode (vista superior y lateral) en un PNG coloreado por tipo de extrusión y soporte; submuestrea gcodes grandes.
-render_stl [C] archivo:str salida:str? vistas:str? max_triangulos:int? -> ok:bool png:str triangulos:int dibujados:int dx_mm:num[mm] dy_mm:num[mm] dz_mm:num[mm] ancho_px:int alto_px:int mensaje:str | Dibuja una malla STL (vistas superior, frontal y lateral) en un PNG con sombreado simple y las dimensiones del cuadro delimitador.
+# block [P heavy, D undoable, C cacheable] inputs(?=optional) -> outputs | description (Spanish in the tool)
+check_gcode [PC]          archivo:str perfil:str? ...  -> ok errores avisos capas islas puentes_largos voladizos ...
+estimar_impresion [C]     masa_g:num[g] perfil:str?    -> filamento_g tiempo_h fiable:bool ...
+puerta_pared_min [PC]     pieza:str umbral_mm? base?   -> ok pared_min_mm veredicto preexistente ...
+puerta_interferencia [PC] pieza:str pose? conocido_mm3? -> ok volumen_mm3 estado
+puerta_imprimibilidad [PC] pieza:str base?             -> ok nuevos_fallos estado
+puerta_margen_fem [C]     config:str pieza:str         -> ok base candidato incumple_criterio ...
+puerta_masa               base_g:num[g] tolerancia_g?  -> ok masa_g delta_g
+laminar [P]               placa:str perfil:str ...      -> gcode:str tiempo_min filamento_g capas ...   (slicer CLI, Orca-like)
+render_gcode / render_stl [C] archivo:str ...           -> png:str                                      (toolpath / mesh previews)
+exportar_copia [D]        archivos:arr destino:str      -> copiados verificados MB_libres               (copy + byte check; never formats)
+perfilar_pipeline [C]     pipeline:str corrida:str      -> cuellos_de_botella tiempo_s rss_pico_MiB     (profiling report)
+build [P] / backup [D] / aplicar_params [D] / informe  (build, backup, apply parameters, write the report)
 ```
 
-El catálogo completo ocupa unos 4,5 kB (alrededor de 1.300 tokens por estimación de 3,5 caracteres/token; era 2,0 kB y ~585 con 9 bloques; una prueba vigila que no pase de 2.500). `[mm]`, `[g]`... son las **unidades** de cada campo numérico y `C` marca los bloques **cacheables** (deterministas). Las **puertas** devuelven siempre `ok`; un bloque `pesado` toma solo la cola `flock` compartida;
-las salidas son pequeñas (máx. 4 KB: rutas + cifras) y los datos pesados viajan por referencia.
+Gates (`puerta_*`) always return `ok`. Heavy blocks share one `flock` queue. Outputs are small (max 4 kB: paths and figures); heavy data travels by reference. Each block declares `honestidad` (honesty): what is digital and what needs a physical test. The full catalog is about 2.8 kB (~800 tokens at 3.5 chars/token); a test keeps it under 2,500.
 
-## Componer un pipeline
+### Pipelines
 
-Un pipeline es un JSON (`agentcad/pipeline_schema.json`). La lista de pasos es una ordenación topológica del DAG: `$paso.salida` solo apunta hacia atrás. Ejemplo mínimo:
+A pipeline is JSON (`agentcad/pipeline_schema.json`); the step list is a topological order of the DAG and `$step.output` only points backwards.
 
 ```json
-{"esquema": "agentcad.pipeline/1", "nombre": "mini", "descripcion": "revisa una pieza",
+{"esquema": "agentcad.pipeline/1", "nombre": "mini", "descripcion": "reviews a part",
  "parametros": {"pieza": {"type": "string"}},
  "pasos": [
   {"id": "construir", "bloque": "build", "en_fallo": "reintentar"},
@@ -119,126 +115,66 @@ Un pipeline es un JSON (`agentcad/pipeline_schema.json`). La lista de pasos es u
    "si": {"no": "$_revertidas"}}]}
 ```
 
-Reglas: `si` (referencia o `{no|y|o|igual|menor}`), `para_cada` + `como`, `en_fallo`: `abortar` (defecto) | `saltar` | `reintentar` | `{accion: reintentar, max}` |
-`{accion: rollback, paso, entradas, repetir_desde, max}` (deshace el paso con el `deshacer` del bloque y repite desde `repetir_desde`). `agentcad validar` hace un dry-run completo
-(esquema, bloques existentes, tipos de literales y referencias, encaje salidas->entradas, rollback coherente) **antes** de ejecutar nada. Pipelines incluidos: `ejemplos/soporte_simple/pipelines/revisar_pieza.json`
-y `agentcad/pipelines/integrar_variante.json` (aplica variantes por pieza, reconstruye, pasa puertas por pieza con rollback y escribe el informe).
+Control: `si` (condition: a reference or `{no|y|o|igual|menor}`, i.e. not/and/or/equals/less-than), `para_cada` + `como` (for-each), and `en_fallo` (on failure): `abortar` | `saltar` | `reintentar` | `{accion: reintentar, max}` | `{accion: rollback, paso, entradas, repetir_desde, max}` (undo a step with the block's `deshacer` and repeat). `agentcad validar` does a full dry run before anything executes. Included: `ejemplos/soporte_simple/pipelines/revisar_pieza.json`, `revisar_laminado.json`, and `agentcad/pipelines/integrar_variante.json` (apply per-part variants, rebuild, run per-part gates with rollback, write the report).
 
-Diario y checkpoints en `<raiz>/build/pipelines/<pipeline>.<corrida>.json`; `agentcad reanudar` continúa desde el último paso correcto. **Modo simulado** (`--simulado`, `agentcad copia_simulada <dir>`):
-los bloques pesados leen un modelo sintético `sim.json` para ensayar la lógica de puertas y rollback sin geometría; el informe lo declara y ninguna cifra simulada prueba nada.
-El **modo real** exige `AGENTCAD_PERMITIR_REAL=1` y la raíz real del proyecto.
+Journal and checkpoints go to `<root>/build/pipelines/<pipeline>.<run>.json`; `agentcad reanudar` resumes after the last good step. **Simulated mode** (`--simulado`, `agentcad copia_simulada <dir>`) reads a synthetic `sim.json` so you can exercise gate and rollback logic without geometry; the report says so and no simulated figure proves anything. **Real mode** requires `AGENTCAD_PERMITIR_REAL=1` and the real project root.
 
-## Caché, unidades y procedencia
+### Cache, units and provenance
 
-- **Caché por hash de entradas.** Un bloque con `determinista=True` guarda su resultado en `<raiz>/build/cache/<bloque>/<clave>.json`. La clave es el sha256 del bloque (su código y manifiesto), sus entradas, el modo
-  (real/simulado) y una *huella de datos* (los STL, el ensamblaje y `agentcad.toml`). Si algo cambia, se recalcula; si no, el paso del diario marca `cache: "acierto"`. Se cachean también los `ok: false`
-  (igual de deterministas); una excepción nunca. `AGENTCAD_SIN_CACHE=1` la desactiva. Idea tomada de Snakemake/DVC, implementación propia (`agentcad/cache.py`).
-- **Unidades tipadas.** Los campos numéricos de los bloques y los parámetros de pipelines pueden llevar `unidad` (`mm`, `mm3`, `g`, `kg`, `MPa`, `N`, `grados`, `adimensional`...). El dry-run
-  (`agentcad validar`) rechaza conectar una salida con otra magnitud (`mm` -> `g`) y también una unidad distinta de la misma magnitud (`m` -> `mm`: hay que convertir explícitamente; `agentcad.unidades.convertir`).
-  Un campo sin unidad no se comprueba. No hay conversión implícita.
-- **Procedencia.** Cada salida de herramienta lleva `procedencia` (versión de agentcad y librerías, sha256 del STL, de la spec y de `agentcad.toml`, solver con el hash de su código, commit git del proyecto y de agentcad
-  si existen); también cada línea del registro encadenado por hash (manipularla rompe la cadena) y cada paso del diario de pipelines (sha256 del bloque y de las entradas). `agentcad/procedencia.py`.
+- **Input-hash cache.** A deterministic block caches its result in `<root>/build/cache/<block>/<key>.json`; the key is the sha256 of the block (code and manifest), inputs, mode and a fingerprint of the data (STLs, assembly, `agentcad.toml`). `AGENTCAD_SIN_CACHE=1` disables it.
+- **Typed units.** Numeric fields and pipeline parameters may carry a unit (`mm`, `mm3`, `g`, `kg`, `MPa`, `N`, `grados`, `mm3/s`, `s`...). The dry run rejects wiring `mm` into `g`, or `m` into `mm` (convert explicitly with `agentcad.unidades.convertir`).
+- **Provenance.** Every tool output carries `procedencia` (agentcad and library versions, sha256 of the STL, spec and `agentcad.toml`, solver code hash, git commits); so does every line of the hash-chained log and every journal step.
 
-## Añadir un bloque (TDD)
+### Slicing, rendering, export and profiling (0.4.0)
 
-```bash
-agentcad nuevo_bloque mi_bloque     # crea agentcad/bloques/mi_bloque.py (borrador) y tests/bloques/test_mi_bloque.py (prueba de contrato en ROJO)
-```
+- **`laminar`** (`docs/laminado.md`) wraps a command-line slicer of the Orca family (only Anycubic Slicer Next is tested for real): per-object 3MF writer (no new dependencies), slicer profile copied to a temporary datadir (yours is never touched), diagnosis and retry of support collisions. A simulated mode uses a fake slicer for tests and CI. **The collision remedy (organic supports, 5 degree branch angle) did not fix a real collision in the synthetic test**: see `LIMITATIONS.md`.
+- **`render_gcode` / `render_stl`**: deterministic PNGs coloured by extrusion type and support (streamed, bounded-memory sub-sampling).
+- **`exportar_copia`** copies files to an already-mounted directory (e.g. a USB stick) and verifies them byte by byte. It never overwrites, **never formats, unmounts or touches partitions**, and its `deshacer` removes only what it copied.
+- **Instrumentation** (`docs/instrumentacion.md`, `docs/perfilar_proyecto.md`): wall/CPU time and peak memory per stage and per pipeline step, switchable off (`AGENTCAD_INSTR=0`), overhead measured (below 1 % in the cases measured). `agentcad perfilar <pipeline> <run>` and `--comparar`; block `perfilar_pipeline`. Nested-dissection ordering in the FEM speeds up factorization by 34 % to 71 % above ~25,000 dof and is slower below ~15,000 (`validacion/RENDIMIENTO_LU.md`; shared machine, geometry dependent).
+- Still missing: an end-to-end `placas_a_gcode` pipeline (plates, slicing, review, render, report).
 
-Un bloque es un módulo con `MANIFIESTO` (valida contra `bloque_schema.json`: nombre, descripción de una línea, entradas/salidas tipadas, precondiciones, efectos, `pesado`, `deshacible`, `honestidad`),
-`ejecutar(entradas, ctx)` y, opcionalmente, `simular` (obligatorio si es pesado) y `deshacer`. Un bloque sin prueba de contrato no se registra y un borrador no se puede usar en un pipeline. El campo
-`honestidad` es obligatorio: cada bloque declara qué es digital y qué requiere prueba física.
+### Project configuration
 
-## Cómo se integra
+agentcad does not know your design; you describe it in `agentcad.toml` at your project root (or set `AGENTCAD_PROYECTO=<path>`). Everything is optional. The example's file is commented. Sections: `[rutas]` (paths: STL, assembly, specs, log, work, params), `[bases]` (baselines), `[build]`, `[material]`, `[impresion.<part>]` (print profile), `[poses.<name>]`, `[interferencia]`, `[respaldo]` (backup), `[estructura.<part>]` (load model), `[calibracion]`, `[gcode.perfiles.<name>]`. Environment: `AGENTCAD_LOCK`, `AGENTCAD_PYTHON`, `AGENTCAD_REGISTRO_DIR`, `AGENTCAD_TRABAJO_DIR`, `AGENTCAD_PERMITIR_REAL`, `AGENTCAD_SIN_CACHE`, `AGENTCAD_FASTLU`. The assembly (`assembly.json`) lists `parts: [{id, file, matrix (4x4, column-major), group, category, printable}]` and `joints`.
 
-agentcad es una **capa** que se coloca sobre lo que ya uses; no sustituye a ningún orquestador ni a ningún solver. Se integra por estas vías, todas incluidas:
-
-1. **Servidor MCP por stdio** (JSON-RPC 2.0, un mensaje JSON por línea, sin dependencias externas): `python -m agentcad.server` (o `agentcad-mcp`) desde la raíz del proyecto.
-   Para registrarlo en un cliente MCP (por ejemplo Claude Code): `claude mcp add agentcad -- python -m agentcad.server` con el directorio de trabajo en tu proyecto.
-2. **CLI** (`agentcad ...` o `python -m agentcad ...`): `catalogo`, `ayuda`, `validar`, `ejecutar`, `reanudar`, `estado`, `bloque`, `nuevo_bloque`, `copia_simulada`. Salida de texto/JSON, códigos de salida 0/1,
-   así que cualquier orquestador capaz de lanzar un comando (Snakemake, Airflow, Make, CI, un script) puede ejecutar un bloque o un pipeline como un paso más.
-3. **API de Python**: las funciones de `agentcad.describe`, `interference`, `printability`, `structure`, `lightening`, `spec`, `registro` y `pipeline.ejecutar_bloque` devuelven diccionarios JSON-serializables.
-
-4. **Adaptadores finos** en [`integraciones/`](integraciones/README.md) para ejecutar un bloque o pipeline como regla de **Snakemake**, nodo de **LangGraph** o tarea de **Airflow**. **No están probados con la librería real**
-   (no están instaladas aquí): solo con dobles que verifican la lógica del adaptador (entradas, JSON de salida, fallo por puerta en rojo, reanudación).
-
-## Caso de éxito
-
-Extraído de un brazo robótico impreso en 3D: el flujo de agentes bajó el conjunto de 490,1 g (rev. 3.7) a 463,7 g (rev. 3.8), cazó un nervio de 0,67 mm que el FEM de 1 mm no veía y **rechazó** `turret_c` porque su margen bajaba (2,03 a 1,97).
-`base_flange` 76,8 a 57,0 g con margen 0,34 a 0,68 (sigue incumpliendo >= 2, declarado). Todo digital: falta imprimir, pesar y ensayar. Detalle y límites en [`docs/caso_brazo_robotico.md`](docs/caso_brazo_robotico.md).
-
-## Laminado: `check_gcode`, comparación con el laminador y calibración
-
-- **`check_gcode`** (bloque, núcleo en `agentcad/gcode.py`): analiza un gcode ya laminado (Orca/Prusa-like, comentarios `;TYPE:`) capa a capa y por objeto: islas flotantes, puentes largos, voladizos, soportes que no parten de la cama, límites de cama y Z, temperaturas,
-  velocidad, caudal volumétrico, inicio/fin y filamento. Cama, altura y límites se declaran en `[gcode.perfiles.<nombre>]` de `agentcad.toml`; el ejemplo trae un gcode diminuto **sintético**
-  (`python generar_gcode.py`, ignorado por git) y el pipeline `revisar_laminado`. No hay modo físico: `deshacer` no aplica (solo lee) y el modo simulado devuelve cifras sintéticas.
-- **`estimar_impresion`** (bloque): filamento y tiempo desde la masa del CAD con una **razón y un error declarados** en `[calibracion]` (se ajustan con `agentcad.calibracion.calibrar`). Sin calibración no da cifras; con menos de 8 grupos avisa `fiable: false`.
-- **Datos y honestidad** en [`validacion/laminador/INFORME.md`](validacion/laminador/INFORME.md): 16 piezas de 4 placas del brazo, laminadas con Anycubic Slicer Next para 3 impresoras (los gcodes, 463 MB, no se publican; solo tablas pequeñas). `check_printability`
-  frente al rebanado de la STL sin soportes (A) y frente al gcode con soportes del laminador (B), sobre 16 piezas:
-
-| categoría | verdad | TP | FP | FN | TN |
-|---|---|--:|--:|--:|--:|
-| islas | A | 4 | 1 | 0 | 11 |
-| islas | B | 0 | 5 | 0 | 11 |
-| puentes largos | A | 4 | 0 | 1 | 11 |
-| puentes largos | B | 3 | 1 | 1 | 11 |
-| voladizos | A | 6 | 0 | 2 | 8 |
-| voladizos | B | 4 | 2 | 3 | 7 |
-
-  Son cifras de un solo caso con pocos positivos. Frente a B, las islas «FP» son las que el laminador cubre con soporte; los FN de voladizos son voladizos locales en piezas grandes que el umbral del 2 % del área total no ve. Masa: el estimador del CAD da 468 g y el laminador 393 a 405 g
-  (con soportes), 12 % por debajo de los 449,8 g citados; tiempos de 17 h 55 min a 25 h 15 min por juego. Un modelo de una razón por impresora tiene error de validación cruzada del 7 al 8 % medio (máx. 10 % en filamento, 16 a 18 % en tiempo) con **solo 4 placas**: indicativo, no fiable. Todo digital.
-
-## Laminar, renderizar y exportar; instrumentación
-
-- **`laminar`** (`docs/laminado.md`): envuelve un laminador de línea de comandos tipo Orca (probado de verdad solo con Anycubic Slicer Next). Escribe un 3MF por objetos con ajustes por objeto, trabaja sobre una copia del datadir y diagnostica el choque de soportes. Modo simulado con un laminador falso para pruebas y CI. **El remedio de soportes (organic, 5 grados) no resolvió un choque real en la prueba sintética**: está en `LIMITACIONES.md`.
-- **`render_gcode` / `render_stl`**: PNG deterministas coloreados por tipo de extrusión y soporte (gcode en streaming, submuestreo acotado).
-- **`exportar_copia`**: copia a un directorio ya montado (p. ej. un USB) y verifica byte a byte; nunca sobrescribe, **nunca formatea, desmonta ni toca particiones**, y su `deshacer` borra solo lo copiado.
-- **Instrumentación** (`docs/instrumentacion.md`, `docs/perfilar_proyecto.md`): tiempo de pared/CPU y memoria pico por etapa y por paso de pipeline, desactivable (`AGENTCAD_INSTR=0`), con sobrecoste medido. `agentcad perfilar <pipeline> <corrida>` y `--comparar`; bloque `perfilar_pipeline`. La disección anidada del FEM mejora la factorización entre un 34 % y un 71 % por encima de ~25.000 gdl y empeora por debajo de ~15.000 (`validacion/RENDIMIENTO_LU.md`; máquina compartida, depende de la geometría).
-
-## Verificación numérica del solver
-
-El FEM voxel se **verificó numéricamente contra soluciones analíticas** (no hay validación física con ensayos). Suite en [`validacion/`](validacion/README.md), tablas completas en [`validacion/TABLAS.md`](validacion/TABLAS.md):
-
-| caso (referencia) | n = 2 | n = 4 | n = 8 | n = 12 |
-|---|---|---|---|---|
-| voladizo (Timoshenko) | -17,2 % | -6,3 % | -2,8 % | -2,1 % |
-| flexión en tres puntos, flecha (Timoshenko) | -16,6 % | -5,0 % | -1,5 % | -0,7 % |
-| torsión (Saint-Venant) | -15,7 % | -5,0 % | -1,3 % | -0,6 % |
-| barra a tracción, ideal / empotrada | 0 / -1,8 % | 0 / -1,2 % | | |
-| placa con agujero, Kt (Peterson; n por diámetro) | | -32,5 % | -21,9 % | -10,0 % (n=16: -6,0 %) |
-| placa apoyada, a/h = 10 (Kirchhoff; n = 2 y 4) | -7,7 % | +6,0 % | | |
-
-![convergencia](validacion/figuras/convergencia.png)
-
-Negativo = el FEM es más rígido que la teoría (o subestima el pico): lado inseguro. El orden observado de la flecha es ~1,6 a 1,8 (hexaedro lineal, bloqueo por cortante); el pico de tensión en el agujero no entra en régimen
-asintótico hasta n > 16. **Resolución mínima recomendada** (n elementos por canto menor, error medido <= 5 %): vigas a flexión 6, torsión 4, tracción 1; placas a flexión 2 (<= 10 %; 5 % no alcanzado); pico de tensión en agujeros 16 por
-diámetro (<= 10 %). `evaluate_structure` usa esa tabla: devuelve `fidelity.error_medido` y avisa si el error medido a la resolución elegida supera el 5 %. Es el error de estas geometrías, no una garantía para otras piezas.
-
-## Qué esperar (honestidad digital / físico)
-
-- Todo resultado lleva `nivel_validacion: "digital"` y una lista de `limites`. Lo que se mide por código y lo que habría que medir en el banco se mantienen separados en cada salida.
-- `evaluate_structure` solo da margen si declaras un modelo de carga; cualquier otra pieza devuelve `no_validado`. El solver se ha **verificado numéricamente** contra soluciones analíticas
-  (viga, placa) y es más rígido que la teoría en malla gruesa; **no está validado físicamente con ensayos** (ver `LIMITACIONES.md`).
-- La lista completa de defectos conocidos del núcleo, con su alcance, está en [`LIMITACIONES.md`](LIMITACIONES.md). Léela antes de usar un veredicto para decidir algo.
-
-## Pruebas
+### Adding a block (TDD)
 
 ```bash
-python -m unittest discover -s tests -t .                     # suite completa (unas 900 pruebas, ~3 min)
-AGENTCAD_RAPIDAS=1 python -m unittest discover -s tests -t .  # sin las pesadas (FEM, voxelización fina, procesos con límites, aligerado)
-python -m agentcad.bdd_runner tests/features/pipelines --pasos tests/features/pipelines/pasos_pipeline.py   # escenarios Gherkin en español
-python -m agentcad.cobertura --excluir 'tests/*' -- discover -s tests -t .      # cobertura de líneas con sys.monitoring (sin dependencias)
+agentcad nuevo_bloque my_block   # creates agentcad/bloques/my_block.py (draft) and tests/bloques/test_my_block.py (contract test, RED)
 ```
 
-No hace falta pytest ni coverage. Las pruebas trabajan sobre el ejemplo o sobre copias temporales y no escriben en el repositorio. Historial y metodología: `docs/SDD.md`.
+A block is a module with `MANIFIESTO` (validated against `bloque_schema.json`), `ejecutar(entradas, ctx)` and optionally `simular` (required if heavy) and `deshacer`. A block with no contract test is not registered; a draft cannot be used in a pipeline.
 
-## Hoja de ruta
+### Integrations
 
-- Pipeline `placas_a_gcode` de punta a punta (placas -> laminado -> revisión -> render -> informe), perfilado.
-- Validar `laminar` con más laminadores (PrusaSlicer usa otro formato de ajustes por objeto) y resolver el choque de soportes real.
-- Verificación cruzada opcional con CalculiX (propuesta con coste/beneficio en `validacion/README.md`).
-- Probar los adaptadores de `integraciones/` con Snakemake, LangGraph y Airflow reales; un caso de éxito documentado.
+1. **MCP server over stdio** (JSON-RPC 2.0, dependency-free): `python -m agentcad.server` or `agentcad-mcp`, from your project root.
+2. **CLI**: `agentcad` / `python -m agentcad`: `catalogo`, `ayuda`, `validar`, `ejecutar` (alias `correr`), `reanudar`, `estado`, `bloque`, `nuevo_bloque`, `copia_simulada`. Exit codes 0/1, so any orchestrator that can run a command can run a block or pipeline as a step.
+3. **Python API**: `agentcad.describe`, `interference`, `printability`, `structure`, `lightening`, `spec`, `registro`, `pipeline.ejecutar_bloque`.
+4. **Thin adapters** in [`integraciones/`](integraciones/README.md) for Snakemake, LangGraph and Airflow. **They have not been tested against the real libraries**, only against doubles that check the adapter logic.
 
-## Licencia
+## Evidence
+
+- **Case study** ([`docs/caso_brazo_robotico.md`](docs/caso_brazo_robotico.md), Spanish): from a 25-part 3D-printed robot arm, an agent flow cut the assembly from 490.1 g to 463.7 g, caught a 0.67 mm rib that a 1 mm voxel FEM could not see, and **rejected** `turret_c` because its margin dropped (2.03 to 1.97). All digital: printing, weighing and testing are still pending.
+- **Solver verification** ([`validacion/`](validacion/README.md)): the voxel FEM was checked against analytical solutions (cantilever, three-point bending, torsion, plate with hole, supported plate) with mesh convergence. It is stiffer than theory on coarse meshes (cantilever -17.2 % at 2 elements per edge, -2.1 % at 12) and underestimates the stress peak at a hole (-32.5 % at 4 elements per diameter, -6.0 % at 16): the unsafe side. `evaluate_structure` returns the measured error for the chosen resolution and warns above 5 %. This is numerical verification, not physical validation. ![convergence](validacion/figuras/convergencia.png)
+- **Against a slicer** ([`validacion/laminador/INFORME.md`](validacion/laminador/INFORME.md)): 16 parts, 3 printers. One case with few positives; indicative only. The mass and time calibration is flagged `fiable: false` (4 plates).
+
+## Limitations
+
+Read [`LIMITATIONS.md`](LIMITATIONS.md) before using a verdict to decide anything. In short: every result is digital; there is no physically validated load model; the FEM overestimates margin on coarse meshes; supports, thin walls and G-code checks are heuristics tied to conventions; POSIX only; alpha software.
+
+## Development
+
+```bash
+python -m unittest discover -s tests -t .                     # full suite (~610 tests, ~3 minutes)
+AGENTCAD_RAPIDAS=1 python -m unittest discover -s tests -t .  # skip the heavy ones (FEM, fine voxelization, resource-limited processes, lightening)
+python -m agentcad.bdd_runner tests/features/pipelines --pasos tests/features/pipelines/pasos_pipeline.py   # Gherkin scenarios
+python -m agentcad.cobertura --excluir 'tests/*' -- discover -s tests -t .      # line coverage via sys.monitoring
+```
+
+pytest and coverage.py are not needed. Tests run on the example or temporary copies and do not write to the repository. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CHANGELOG.md`](CHANGELOG.md).
+
+Roadmap: optional cross-check with CalculiX; test the adapters with real Snakemake, LangGraph and Airflow.
+
+## License
 
 MIT. Copyright (c) 2026 Caelos-Palacio.

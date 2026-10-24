@@ -23,7 +23,7 @@ Un agente que modifica un diseño necesita comprobarlo en el bucle, y necesita q
 |---|---|
 | Herramientas (MCP/CLI/Python) | `describe_part`, `check_interference`, `check_printability`, `evaluate_structure`, `apply_hex_lightening`, `check_spec`, `record_result`, `verify_registro` |
 | Spec-as-code | `agentcad/spec_schema.json` (JSON Schema), `check_spec_file`, pruebas derivadas de cada spec (`python -m agentcad.spec_tests`) |
-| Bloques | 11 bloques componibles con `MANIFIESTO` tipado y catálogo de una línea por bloque |
+| Bloques | 16 bloques componibles con `MANIFIESTO` tipado y catálogo de una línea por bloque |
 | Pipelines | JSON declarativo, dry-run (`validar`), ejecución con diario/checkpoints/reanudación, modo simulado |
 | Metodología | SDD, TDD y BDD en español (`docs/SDD.md`, escenarios Gherkin con ejecutor propio), medidor de cobertura propio |
 
@@ -89,15 +89,20 @@ backup [D] etiqueta:str -> ruta:str ya_existia:bool | Copia parámetros, ensambl
 build [P] - -> ok:bool masa_g:num[g] log:str | Ejecuta el comando [build] de agentcad.toml bajo flock y devuelve la masa estimada del conjunto.
 check_gcode [PC] archivo:str perfil:str? guardar:bool? -> ok:bool errores:int avisos:int capas:int islas:int puentes_largos:int voladizos:int soportes_sin_cama:int fuera_de_cama:int caudal_max:num[mm3/s] z_max:num[mm] masa_g:num[g] mensajes:arr detalle:str | Analiza un gcode: islas flotantes, puentes, voladizos, soportes sin cama, límites de cama/Z, temperaturas, caudal, inicio/fin.
 estimar_impresion [C] masa_g:num[g] perfil:str? -> filamento_g:num[g] filamento_min_g:num[g] filamento_max_g:num[g] tiempo_h:num[h] tiempo_min_h:num[h] tiempo_max_h:num[h] fiable:bool nota:str | Estima filamento y tiempo de impresión desde la masa del CAD con una calibración declarada y su error; sin calibración no da cifras.
+exportar_copia [D] archivos:arr destino:str subcarpeta:str? -> ok:bool copiados:int ya_estaban:int verificados:int tamano_mb:num necesario_mb:num libre_antes_mb:num libre_despues_mb:num destino:str registro:str conflictos:arr mensaje:str | Copia archivos o directorios a un destino ya montado (p. ej. un USB), verifica cada copia byte a byte y deshace solo lo copiado; nunca formatea ni desmonta.
 informe [-] etiqueta:str diario:str filas:arr? extra:arr? -> ruta:str incumplimientos:int revertidas:arr | Escribe build/INFORME_<etiqueta>.md desde el diario del pipeline: pasos, puertas por pieza, rollbacks, incumplimientos conocidos y digital vs físico.
+laminar [PC] placa:str ajustes:obj? perfil:str? salida:str? -> ok:bool gcode:str manifiesto:str tiempo_min:num[min] filamento_g:num[g] capas:int objetos:int intentos:int simulado:bool diagnostico:str | Lamina una placa STL/3MF con un laminador de línea de comandos (Orca/Anycubic): ruta del gcode, resumen corto (tiempo, filamento, capas) y manifiesto con unidades.
+perfilar_pipeline [C] pipeline:str corrida:str top:int? -> ok:bool total_s:num[s] rss_pico_mib:num[MiB] cuello_paso:str cuello_fraccion:num[fraccion] resumen:str ruta_json:str ruta_md:str | Perfila una corrida de pipeline: tiempo, memoria pico y caché por paso, cuello de botella y rutas del informe JSON/Markdown.
 puerta_imprimibilidad [PC] pieza:str base:str? -> ok:bool nuevos_fallos:arr estado:str | Puerta: la pieza no incumple ningún criterio de imprimibilidad que la línea base sí cumpla (pared, voladizos, islas, puentes).
 puerta_interferencia [PC] pieza:str pose:str? conocido_mm3:num[mm3]? -> ok:bool volumen_mm3:num[mm3] estado:str | Puerta: la pieza no interfiere (> 0,1 mm3) con sus vecinas, salvo el volumen conocido declarado (agentcad.check_interference).
 puerta_margen_fem [C] config:str pieza:str -> ok:bool base:num[adimensional] candidato:num[adimensional] incumple_criterio:bool estado:str nota:str | Puerta: el margen FEM de la pieza no es peor que el de la línea base a igual malla; marca el incumplimiento conocido si queda bajo el criterio.
 puerta_masa [-] base_g:num[g] tolerancia_g:num[g]? -> ok:bool masa_g:num[g] delta_g:num[g] | Puerta: la masa estimada del conjunto no supera la de la revisión base (+ tolerancia).
 puerta_pared_min [PC] pieza:str umbral_mm:num[mm]? base:str? -> ok:bool pared_min_mm:num[mm] veredicto:str preexistente:bool vertical_no_resuelto:bool | Puerta: pared mínima imprimible >= umbral, o no peor que la línea base si esta ya incumplía (check_printability).
+render_gcode [C] archivo:str salida:str? vistas:str? submuestreo:int? max_segmentos:int? -> ok:bool png:str segmentos:int dibujados:int submuestreo:int capas:int tipos:obj ancho_px:int alto_px:int mensaje:str | Dibuja un gcode (vista superior y lateral) en un PNG coloreado por tipo de extrusión y soporte; submuestrea gcodes grandes.
+render_stl [C] archivo:str salida:str? vistas:str? max_triangulos:int? -> ok:bool png:str triangulos:int dibujados:int dx_mm:num[mm] dy_mm:num[mm] dz_mm:num[mm] ancho_px:int alto_px:int mensaje:str | Dibuja una malla STL (vistas superior, frontal y lateral) en un PNG con sombreado simple y las dimensiones del cuadro delimitador.
 ```
 
-El catálogo completo ocupa unos 2,8 kB (alrededor de 800 tokens por estimación de 3,5 caracteres/token; era 2,0 kB y ~585 con 9 bloques; una prueba vigila que no pase de 2.500). `[mm]`, `[g]`... son las **unidades** de cada campo numérico y `C` marca los bloques **cacheables** (deterministas). Las **puertas** devuelven siempre `ok`; un bloque `pesado` toma solo la cola `flock` compartida;
+El catálogo completo ocupa unos 4,5 kB (alrededor de 1.300 tokens por estimación de 3,5 caracteres/token; era 2,0 kB y ~585 con 9 bloques; una prueba vigila que no pase de 2.500). `[mm]`, `[g]`... son las **unidades** de cada campo numérico y `C` marca los bloques **cacheables** (deterministas). Las **puertas** devuelven siempre `ok`; un bloque `pesado` toma solo la cola `flock` compartida;
 las salidas son pequeñas (máx. 4 KB: rutas + cifras) y los datos pesados viajan por referencia.
 
 ## Componer un pipeline
@@ -183,6 +188,13 @@ Extraído de un brazo robótico impreso en 3D: el flujo de agentes bajó el conj
   Son cifras de un solo caso con pocos positivos. Frente a B, las islas «FP» son las que el laminador cubre con soporte; los FN de voladizos son voladizos locales en piezas grandes que el umbral del 2 % del área total no ve. Masa: el estimador del CAD da 468 g y el laminador 393 a 405 g
   (con soportes), 12 % por debajo de los 449,8 g citados; tiempos de 17 h 55 min a 25 h 15 min por juego. Un modelo de una razón por impresora tiene error de validación cruzada del 7 al 8 % medio (máx. 10 % en filamento, 16 a 18 % en tiempo) con **solo 4 placas**: indicativo, no fiable. Todo digital.
 
+## Laminar, renderizar y exportar; instrumentación
+
+- **`laminar`** (`docs/laminado.md`): envuelve un laminador de línea de comandos tipo Orca (probado de verdad solo con Anycubic Slicer Next). Escribe un 3MF por objetos con ajustes por objeto, trabaja sobre una copia del datadir y diagnostica el choque de soportes. Modo simulado con un laminador falso para pruebas y CI. **El remedio de soportes (organic, 5 grados) no resolvió un choque real en la prueba sintética**: está en `LIMITACIONES.md`.
+- **`render_gcode` / `render_stl`**: PNG deterministas coloreados por tipo de extrusión y soporte (gcode en streaming, submuestreo acotado).
+- **`exportar_copia`**: copia a un directorio ya montado (p. ej. un USB) y verifica byte a byte; nunca sobrescribe, **nunca formatea, desmonta ni toca particiones**, y su `deshacer` borra solo lo copiado.
+- **Instrumentación** (`docs/instrumentacion.md`, `docs/perfilar_proyecto.md`): tiempo de pared/CPU y memoria pico por etapa y por paso de pipeline, desactivable (`AGENTCAD_INSTR=0`), con sobrecoste medido. `agentcad perfilar <pipeline> <corrida>` y `--comparar`; bloque `perfilar_pipeline`. La disección anidada del FEM mejora la factorización entre un 34 % y un 71 % por encima de ~25.000 gdl y empeora por debajo de ~15.000 (`validacion/RENDIMIENTO_LU.md`; máquina compartida, depende de la geometría).
+
 ## Verificación numérica del solver
 
 El FEM voxel se **verificó numéricamente contra soluciones analíticas** (no hay validación física con ensayos). Suite en [`validacion/`](validacion/README.md), tablas completas en [`validacion/TABLAS.md`](validacion/TABLAS.md):
@@ -212,7 +224,7 @@ diámetro (<= 10 %). `evaluate_structure` usa esa tabla: devuelve `fidelity.erro
 ## Pruebas
 
 ```bash
-python -m unittest discover -s tests -t .                     # suite completa (unas 600 pruebas, ~2 min)
+python -m unittest discover -s tests -t .                     # suite completa (unas 900 pruebas, ~3 min)
 AGENTCAD_RAPIDAS=1 python -m unittest discover -s tests -t .  # sin las pesadas (FEM, voxelización fina, procesos con límites, aligerado)
 python -m agentcad.bdd_runner tests/features/pipelines --pasos tests/features/pipelines/pasos_pipeline.py   # escenarios Gherkin en español
 python -m agentcad.cobertura --excluir 'tests/*' -- discover -s tests -t .      # cobertura de líneas con sys.monitoring (sin dependencias)
@@ -222,6 +234,8 @@ No hace falta pytest ni coverage. Las pruebas trabajan sobre el ejemplo o sobre 
 
 ## Hoja de ruta
 
+- Pipeline `placas_a_gcode` de punta a punta (placas -> laminado -> revisión -> render -> informe), perfilado.
+- Validar `laminar` con más laminadores (PrusaSlicer usa otro formato de ajustes por objeto) y resolver el choque de soportes real.
 - Verificación cruzada opcional con CalculiX (propuesta con coste/beneficio en `validacion/README.md`).
 - Probar los adaptadores de `integraciones/` con Snakemake, LangGraph y Airflow reales; un caso de éxito documentado.
 

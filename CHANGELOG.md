@@ -1,5 +1,38 @@
 # Registro de cambios
 
+## 0.4.0
+
+Laminado, render y exportación (todo digital; ningún gcode, PNG ni copia verificada prueba una impresión):
+Laminado, render y exportación (docs/laminado.md):
+- **Bloque `laminar`** (`agentcad/bloques/laminar.py`, núcleo en `agentcad/laminador.py`): envuelve un laminador de línea de comandos tipo Orca/Anycubic Slicer Next. Entradas: placa STL (un objeto por componente conectado) o 3MF,
+  ajustes por objeto, perfil (`[laminar.perfiles.<nombre>]` de agentcad.toml: comando, datadir, máquina/proceso/filamento, cama). Salida por referencia: ruta del gcode, manifiesto JSON con unidades y hashes, tiempo (min), filamento (g), capas.
+  Escritor de 3MF por objetos sin dependencias nuevas (zip a mano, determinista), copia temporal del datadir (el original no se toca), plantilla de ajustes exportada con el propio laminador, cola pesada (flock), caché por hash,
+  diagnóstico de fallos y reintento de choques de soportes (organic + ángulo de rama 5 grados, configurable). Modo simulado con un laminador FALSO (`agentcad/laminador_falso.py`, gcode sintético) para pruebas y CI.
+  Probado con Anycubic Slicer Next real sobre una placa pequeña (opcional, `AGENTCAD_LAMINADOR_REAL`).
+- **Bloques `render_gcode` y `render_stl`** (`agentcad/render.py`): PNG con matplotlib sin pyplot; gcode en streaming con submuestreo de memoria acotada, coloreado por tipo de extrusión y soporte (vistas superior y lateral); STL en tres vistas.
+- **Bloque `exportar_copia`**: copia a un directorio ya montado (p. ej. USB) con comprobación previa de conflictos y espacio, verificación binaria, nunca sobrescribe, no formatea/desmonta/toca particiones, `deshacer` borra solo lo copiado,
+  modo simulado = ensayo, lista blanca opcional `[exportar] destinos_permitidos`.
+- Pipeline `laminar_y_revisar` en `ejemplos/soporte_simple` (laminar -> check_gcode -> render_gcode) en modo simulado y en real con el laminador falso; `[laminar]` en su agentcad.toml.
+- Gancho `cache_valida(salidas, ctx)` en `agentcad/cache.py`: un bloque cuyas salidas son rutas descarta el acierto de caché si el fichero ya no existe. Ayudas de rutas en `agentcad/bloques/_rutas.py`.
+- Catálogo: 11 a 15 bloques, de 2759 a 4188 caracteres (788 a ~1197 tokens a 3,5 caracteres/token).
+- Limitaciones nuevas en LIMITACIONES.md (sección «Laminado, render y exportación»): el remedio de soportes no se pudo verificar contra un choque real resuelto; solo Anycubic Slicer Next probado; 3MF dado = sin reintento.
+
+Instrumentación y perfilado:
+Instrumentación y perfilado (todo digital; tiempos y memoria de la máquina donde corre):
+- **`agentcad/instr.py`**: etapas genéricas (`instr.etapa`, `@instr.medida`, `instr.cache_evento`) con tiempo de pared/CPU, RSS inicial/pico/final (muestreo, básica o tracemalloc), tiempo exclusivo, hilos y procesos hijos;
+  sin dependencias nuevas; desactivable con `[instrumentacion] activa=false` o `AGENTCAD_INSTR=0`. Sobrecoste: 0,26 us por etapa desactivada, ~26 us activa; < 0,01 % en el FEM y la imprimibilidad medidos, ~0,12 ms por paso de pipeline (<= 0,9 % en corridas simuladas de 0,7 s) (docs/instrumentacion.md).
+- **Diario de pipelines**: cada paso lleva `perfil` (pared, CPU propia y de hijos, RSS, espera de cola `flock` separada del trabajo, etapas internas, intentos, `seg_ahorrados` en aciertos de caché); la corrida lleva `perfil_corrida`.
+  La caché guarda los segundos de cálculo (`cache.con_cache_info`; `con_cache` conserva su firma).
+- **`agentcad perfilar <pipeline> <corrida>`** (tabla corta, cuellos de botella, % por bloque, etapas, caché; JSON y Markdown en `build/perfiles/`) y **`agentcad perfilar <pipeline> --comparar R1 R2`** (deltas por paso y etapa, causa probable: bloque, entradas o caché).
+- **Bloque `perfilar_pipeline`** (ligero, cacheable; unidades nuevas `MiB`, `GiB`): 11 a 12 bloques; catálogo de 2759 a 3074 caracteres (843 a 938 tokens con tiktoken, +94; 788 a 878 a 3,5 car./token).
+- Etapas en el FEM (`fem_*`, `voxelizar_*`), la imprimibilidad, la interferencia y la carga de mallas.
+- **fastlu (disección anidada)**: ya estaba portado; ahora con instrumentación, `tests/test_fastlu.py` (equivalencia con COLAMD: 1e-8 relativo declarado) y `validacion/rendimiento_lu.py`: -34 % a -71 % de tiempo de factorización y -19 % a -33 % de RSS pico por encima de ~25.000 gdl; peor por debajo de ~15.000 gdl; depende de la geometría.
+- Pipeline de ejemplo `revisar_pieza_perfilado`; docs `instrumentacion.md` y `perfilar_proyecto.md`.
+- Config nueva: sección `[instrumentacion]` (DEFECTOS en config.py). Unidades nuevas: `MiB`, `GiB`.
+
+
+Integración: el catálogo queda en 16 bloques. Pendiente: el pipeline `placas_a_gcode` de punta a punta (placas -> laminado -> revisión -> informe), con perfilado.
+
 ## 0.3.0
 
 Laminado (todo digital; ningún gcode ni STL del proyecto de origen se publica, solo tablas pequeñas):
